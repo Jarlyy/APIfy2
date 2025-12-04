@@ -31,6 +31,24 @@ export default function Header({ user }: { user: User }) {
                 Тестирование
               </Link>
               <Link
+                href="/favorites"
+                className="text-sm font-medium text-zinc-700 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-white"
+              >
+                Избранное
+              </Link>
+              <Link
+                href="/import"
+                className="text-sm font-medium text-zinc-700 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-white"
+              >
+                Импорт API
+              </Link>
+              <Link
+                href="/analytics"
+                className="text-sm font-medium text-zinc-700 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-white"
+              >
+                Аналитика
+              </Link>
+              <Link
                 href="/history"
                 className="text-sm font-medium text-zinc-700 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-white"
               >
