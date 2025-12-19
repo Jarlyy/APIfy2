@@ -1,0 +1,14 @@
+{
+  "modelUri": "gpt://b1gqbloth2j8596bggdb/yandexgpt-lite",
+  "completionOptions": {
+    "stream": false,
+    "temperature": 0.1,
+    "maxTokens": 100
+  },
+  "messages": [
+    {
+      "role": "user",
+      "text": "Привет! Это тест API. Ответь коротко."
+    }
+  ]
+}
