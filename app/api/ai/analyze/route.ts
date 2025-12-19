@@ -1,0 +1,70 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { MimoAPI } from '@/lib/mimo-api';
+
+export async function POST(request: NextRequest) {
+  console.log('AI API вызван');
+  
+  try {
+    const body = await request.json();
+    console.log('Получен запрос:', body);
+    
+    const { action, data } = body;
+    
+    if (!action) {
+      return NextResponse.json(
+        { error: 'Не указано действие' },
+        { status: 400 }
+      );
+    }
+
+    const mimo = new MimoAPI();
+    let result: string;
+
+    switch (action) {
+      case 'analyzeService':
+        if (!data?.serviceName) {
+          return NextResponse.json(
+            { error: 'Не указано название сервиса' },
+            { status: 400 }
+          );
+        }
+        result = await mimo.analyzeAPI(data.serviceName);
+        break;
+
+      case 'generateScenarios':
+        if (!data?.apiDoc) {
+          return NextResponse.json(
+            { error: 'Не указана документация API' },
+            { status: 400 }
+          );
+        }
+        result = await mimo.generateTestScenarios(data.apiDoc);
+        break;
+
+      case 'extractExamples':
+        if (!data?.apiDoc) {
+          return NextResponse.json(
+            { error: 'Не указана документация API' },
+            { status: 400 }
+          );
+        }
+        result = await mimo.extractExamples(data.apiDoc);
+        break;
+
+      default:
+        return NextResponse.json(
+          { error: 'Неизвестное действие' },
+          { status: 400 }
+        );
+    }
+
+    console.log('Результат AI:', result.substring(0, 100) + '...');
+    return NextResponse.json({ result });
+  } catch (error) {
+    console.error('Ошибка AI анализа:', error);
+    return NextResponse.json(
+      { error: `Ошибка при обработке запроса к AI: ${error instanceof Error ? error.message : 'Неизвестная ошибка'}` },
+      { status: 500 }
+    );
+  }
+}
