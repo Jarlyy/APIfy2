@@ -31,6 +31,16 @@ export async function POST(request: NextRequest) {
         result = await mimo.analyzeAPI(data.serviceName);
         break;
 
+      case 'generateTests':
+        if (!data?.serviceName) {
+          return NextResponse.json(
+            { error: 'Не указано название сервиса' },
+            { status: 400 }
+          );
+        }
+        result = await mimo.generateReadyTests(data.serviceName);
+        break;
+
       case 'generateScenarios':
         if (!data?.apiDoc) {
           return NextResponse.json(

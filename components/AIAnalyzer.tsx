@@ -11,10 +11,12 @@ import { Loader2, Brain, Search, FileText, Zap } from 'lucide-react';
 
 interface AIAnalyzerProps {
   onApiFound?: (apiInfo: any) => void;
+  onTestGenerated?: (testData: any) => void;
 }
 
-export function AIAnalyzer({ onApiFound }: AIAnalyzerProps) {
+export function AIAnalyzer({ onApiFound, onTestGenerated }: AIAnalyzerProps) {
   const [serviceName, setServiceName] = useState('');
+  const [testServiceName, setTestServiceName] = useState('');
   const [apiDoc, setApiDoc] = useState('');
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState('');
@@ -44,6 +46,46 @@ export function AIAnalyzer({ onApiFound }: AIAnalyzerProps) {
     } catch (error) {
       console.error('Ошибка анализа:', error);
       setResult('Ошибка при анализе сервиса. Попробуйте еще раз.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const generateReadyTests = async () => {
+    if (!testServiceName.trim()) return;
+
+    setLoading(true);
+    try {
+      const response = await fetch('/api/ai/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'generateTests',
+          data: { serviceName: testServiceName.trim() }
+        })
+      });
+
+      const data = await response.json();
+      if (data.error) {
+        throw new Error(data.error);
+      }
+
+      setResult(data.result);
+      setActiveTab('result');
+      
+      // Попытаемся извлечь JSON тесты из ответа
+      try {
+        const jsonMatch = data.result.match(/```json\s*([\s\S]*?)\s*```/);
+        if (jsonMatch) {
+          const testsData = JSON.parse(jsonMatch[1]);
+          onTestGenerated?.(testsData);
+        }
+      } catch (e) {
+        console.log('Не удалось извлечь JSON тесты:', e);
+      }
+    } catch (error) {
+      console.error('Ошибка генерации тестов:', error);
+      setResult('Ошибка при генерации тестов. Попробуйте еще раз.');
     } finally {
       setLoading(false);
     }
@@ -120,10 +162,14 @@ export function AIAnalyzer({ onApiFound }: AIAnalyzerProps) {
       </CardHeader>
       <CardContent>
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="search" className="flex items-center gap-1">
               <Search className="h-4 w-4" />
               Поиск API
+            </TabsTrigger>
+            <TabsTrigger value="tests" className="flex items-center gap-1">
+              <Zap className="h-4 w-4" />
+              Готовые тесты
             </TabsTrigger>
             <TabsTrigger value="scenarios" className="flex items-center gap-1">
               <Zap className="h-4 w-4" />
@@ -163,6 +209,38 @@ export function AIAnalyzer({ onApiFound }: AIAnalyzerProps) {
                 <>
                   <Search className="mr-2 h-4 w-4" />
                   Найти API
+                </>
+              )}
+            </Button>
+          </TabsContent>
+
+          <TabsContent value="tests" className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Название API сервиса</label>
+              <Input
+                placeholder="Например: GitHub, Telegram Bot, Twitter API..."
+                value={testServiceName}
+                onChange={(e) => setTestServiceName(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && generateReadyTests()}
+              />
+              <p className="text-xs text-muted-foreground">
+                ИИ создаст готовые к использованию тесты для популярных API
+              </p>
+            </div>
+            <Button 
+              onClick={generateReadyTests} 
+              disabled={loading || !testServiceName.trim()}
+              className="w-full"
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Генерирую тесты...
+                </>
+              ) : (
+                <>
+                  <Zap className="mr-2 h-4 w-4" />
+                  Создать готовые тесты
                 </>
               )}
             </Button>
