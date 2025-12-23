@@ -1,20 +1,13 @@
 'use client'
 
-import { createClient } from '@/lib/supabase/client'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import type { User } from '@supabase/supabase-js'
 
-export default function Header({ user }: { user: User }) {
-  const router = useRouter()
-  const supabase = createClient()
+interface MockUser {
+  id: string;
+  email: string;
+}
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut()
-    router.push('/login')
-    router.refresh()
-  }
-
+export default function Header({ user }: { user: MockUser }) {
   return (
     <header className="border-b border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-800">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -59,14 +52,11 @@ export default function Header({ user }: { user: User }) {
 
           <div className="flex items-center gap-4">
             <span className="text-sm text-zinc-600 dark:text-zinc-400">
-              {user.email}
+              Гостевой режим
             </span>
-            <button
-              onClick={handleLogout}
-              className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
-            >
-              Выйти
-            </button>
+            <div className="rounded-md bg-green-100 px-3 py-1 text-sm font-medium text-green-800 dark:bg-green-900 dark:text-green-200">
+              Без регистрации
+            </div>
           </div>
         </div>
       </div>

@@ -1,20 +1,16 @@
-import { createClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
-import ApiTestForm from '@/components/ApiTestForm'
 import Header from '@/components/Header'
-import { AIAnalyzer } from '@/components/AIAnalyzer'
+import ApiTestingWorkspace from '@/components/ApiTestingWorkspace'
 
 export default async function DashboardPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-
-  if (!user) {
-    redirect('/login')
+  // Убираем проверку аутентификации
+  const mockUser = {
+    id: 'guest-user',
+    email: 'guest@example.com'
   }
 
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-900">
-      <Header user={user} />
+      <Header user={mockUser} />
       
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <div className="mb-8">
@@ -26,14 +22,7 @@ export default async function DashboardPage() {
           </p>
         </div>
 
-        <div className="grid gap-8 lg:grid-cols-2">
-          <div className="space-y-6">
-            <AIAnalyzer />
-          </div>
-          <div className="space-y-6">
-            <ApiTestForm userId={user.id} />
-          </div>
-        </div>
+        <ApiTestingWorkspace userId={mockUser.id} />
       </main>
     </div>
   )
