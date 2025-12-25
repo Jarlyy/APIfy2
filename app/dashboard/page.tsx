@@ -2,11 +2,8 @@ import Header from '@/components/Header'
 import ApiTestingWorkspace from '@/components/ApiTestingWorkspace'
 
 export default async function DashboardPage() {
-  // Убираем проверку аутентификации
-  const mockUser = {
-    id: 'guest-user',
-    email: 'guest@example.com'
-  }
+  // В гостевом режиме не передаем пользователя
+  const mockUser = undefined; // Убираем мок пользователя для показа кнопки "Войти"
 
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-900">
@@ -22,7 +19,7 @@ export default async function DashboardPage() {
           </p>
         </div>
 
-        <ApiTestingWorkspace userId={mockUser.id} />
+        <ApiTestingWorkspace userId="guest-user" />
       </main>
     </div>
   )

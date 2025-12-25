@@ -7,7 +7,7 @@ interface MockUser {
   email: string;
 }
 
-export default function Header({ user }: { user: MockUser }) {
+export default function Header({ user }: { user?: MockUser }) {
   return (
     <header className="border-b border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-800">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -51,12 +51,23 @@ export default function Header({ user }: { user: MockUser }) {
           </div>
 
           <div className="flex items-center gap-4">
-            <span className="text-sm text-zinc-600 dark:text-zinc-400">
-              Гостевой режим
-            </span>
-            <div className="rounded-md bg-green-100 px-3 py-1 text-sm font-medium text-green-800 dark:bg-green-900 dark:text-green-200">
-              Без регистрации
-            </div>
+            {user ? (
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-zinc-700 dark:text-zinc-300">
+                  {user.email}
+                </span>
+                <button className="text-sm text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200">
+                  Выйти
+                </button>
+              </div>
+            ) : (
+              <Link
+                href="/login"
+                className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+              >
+                Войти
+              </Link>
+            )}
           </div>
         </div>
       </div>

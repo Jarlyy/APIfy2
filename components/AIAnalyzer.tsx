@@ -7,11 +7,28 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Brain, Search, FileText, Zap } from 'lucide-react';
+import { Loader2, Brain, Search, FileText, Zap, Play } from 'lucide-react';
+import { ExecutableTestsPanelNew } from './ExecutableTestsPanelNew';
 
 interface AIAnalyzerProps {
   onApiFound?: (apiInfo: any) => void;
   onTestGenerated?: (testData: any) => void;
+}
+
+interface ExecutableTest {
+  id: string;
+  name: string;
+  description: string;
+  method: string;
+  url: string;
+  headers: Record<string, string>;
+  body: string;
+  auth_type: string;
+  auth_token: string;
+  expected_status: number;
+  test_type: string;
+  category: string;
+  instructions?: string;
 }
 
 export function AIAnalyzer({ onApiFound, onTestGenerated }: AIAnalyzerProps) {
@@ -21,6 +38,7 @@ export function AIAnalyzer({ onApiFound, onTestGenerated }: AIAnalyzerProps) {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState('');
   const [activeTab, setActiveTab] = useState('search');
+  const [executableTests, setExecutableTests] = useState<ExecutableTest[]>([]);
 
   const analyzeService = async () => {
     if (!serviceName.trim()) return;
@@ -42,7 +60,7 @@ export function AIAnalyzer({ onApiFound, onTestGenerated }: AIAnalyzerProps) {
       }
 
       setResult(data.result);
-      setActiveTab('result');
+      // Остаемся на вкладке search для отображения результата
     } catch (error) {
       console.error('Ошибка анализа:', error);
       setResult('Ошибка при анализе сервиса. Попробуйте еще раз.');
@@ -71,7 +89,7 @@ export function AIAnalyzer({ onApiFound, onTestGenerated }: AIAnalyzerProps) {
       }
 
       setResult(data.result);
-      setActiveTab('result');
+      // Остаемся на вкладке generate для отображения результата
       
       // Попытаемся извлечь JSON тесты из ответа
       try {
@@ -86,6 +104,64 @@ export function AIAnalyzer({ onApiFound, onTestGenerated }: AIAnalyzerProps) {
     } catch (error) {
       console.error('Ошибка генерации тестов:', error);
       setResult('Ошибка при генерации тестов. Попробуйте еще раз.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const generateExecutableTests = async () => {
+    if (!testServiceName.trim()) return;
+
+    setLoading(true);
+    try {
+      const response = await fetch('/api/ai/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'generateExecutableTests',
+          data: { serviceName: testServiceName.trim() }
+        })
+      });
+
+      const data = await response.json();
+      if (data.error) {
+        throw new Error(data.error);
+      }
+
+      // Попытаемся распарсить JSON ответ
+      try {
+        let testsData;
+        
+        // Если ответ уже JSON
+        if (typeof data.result === 'object') {
+          testsData = data.result;
+        } else {
+          // Попытаемся найти JSON в тексте
+          const jsonMatch = data.result.match(/\[[\s\S]*\]/);
+          if (jsonMatch) {
+            testsData = JSON.parse(jsonMatch[0]);
+          } else {
+            // Попытаемся распарсить весь ответ как JSON
+            testsData = JSON.parse(data.result);
+          }
+        }
+
+        if (Array.isArray(testsData)) {
+          setExecutableTests(testsData);
+          // Остаемся на вкладке generate для отображения тестов
+          onTestGenerated?.(testsData);
+        } else {
+          throw new Error('Ответ не является массивом тестов');
+        }
+      } catch (e) {
+        console.error('Ошибка парсинга тестов:', e);
+        setResult(`Получен ответ от AI, но не удалось распарсить тесты:\n\n${data.result}`);
+        // Остаемся на вкладке generate для отображения ошибки
+      }
+    } catch (error) {
+      console.error('Ошибка генерации исполняемых тестов:', error);
+      setResult('Ошибка при генерации исполняемых тестов. Попробуйте еще раз.');
+      // Остаемся на вкладке generate для отображения ошибки
     } finally {
       setLoading(false);
     }
@@ -111,7 +187,7 @@ export function AIAnalyzer({ onApiFound, onTestGenerated }: AIAnalyzerProps) {
       }
 
       setResult(data.result);
-      setActiveTab('result');
+      // Остаемся на вкладке analyze для отображения результата
     } catch (error) {
       console.error('Ошибка генерации:', error);
       setResult('Ошибка при генерации сценариев. Попробуйте еще раз.');
@@ -140,7 +216,7 @@ export function AIAnalyzer({ onApiFound, onTestGenerated }: AIAnalyzerProps) {
       }
 
       setResult(data.result);
-      setActiveTab('result');
+      // Остаемся на вкладке analyze для отображения результата
     } catch (error) {
       console.error('Ошибка извлечения:', error);
       setResult('Ошибка при извлечении примеров. Попробуйте еще раз.');
@@ -151,172 +227,214 @@ export function AIAnalyzer({ onApiFound, onTestGenerated }: AIAnalyzerProps) {
 
   return (
     <Card className="w-full">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
+      <CardHeader className="pb-4">
+        <CardTitle className="flex items-center gap-2 text-lg">
           <Brain className="h-5 w-5 text-purple-500" />
           AI Анализатор API
         </CardTitle>
-        <CardDescription>
+        <CardDescription className="text-sm">
           Используйте ИИ для поиска API, анализа документации и генерации тестов
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-5">
-            <TabsTrigger value="search" className="flex items-center gap-1">
-              <Search className="h-4 w-4" />
-              Поиск API
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-3 h-9">
+            <TabsTrigger value="search" className="flex items-center gap-1 text-xs">
+              <Search className="h-3 w-3" />
+              Найти API
             </TabsTrigger>
-            <TabsTrigger value="tests" className="flex items-center gap-1">
-              <Zap className="h-4 w-4" />
-              Готовые тесты
+            <TabsTrigger value="generate" className="flex items-center gap-1 text-xs">
+              <Play className="h-3 w-3" />
+              Создать тесты
             </TabsTrigger>
-            <TabsTrigger value="scenarios" className="flex items-center gap-1">
-              <Zap className="h-4 w-4" />
-              Сценарии
-            </TabsTrigger>
-            <TabsTrigger value="examples" className="flex items-center gap-1">
-              <FileText className="h-4 w-4" />
-              Примеры
-            </TabsTrigger>
-            <TabsTrigger value="result" className="flex items-center gap-1">
-              <Brain className="h-4 w-4" />
-              Результат
+            <TabsTrigger value="analyze" className="flex items-center gap-1 text-xs">
+              <Brain className="h-3 w-3" />
+              Анализ документации
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="search" className="space-y-4">
+          <TabsContent value="search" className="space-y-3 mt-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium">Название сервиса</label>
+              <label className="text-sm font-medium">Название сервиса или API</label>
               <Input
-                placeholder="Например: GitHub, Telegram, VK API..."
+                placeholder="Например: GitHub, Telegram Bot, Twitter API..."
                 value={serviceName}
                 onChange={(e) => setServiceName(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && analyzeService()}
+                className="h-9"
               />
+              <p className="text-xs text-muted-foreground">
+                ИИ найдет информацию об API: документацию, эндпоинты, аутентификацию
+              </p>
             </div>
             <Button 
               onClick={analyzeService} 
               disabled={loading || !serviceName.trim()}
-              className="w-full"
+              className="w-full h-9"
             >
               {loading ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Анализирую...
+                  <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                  Ищу информацию...
                 </>
               ) : (
                 <>
-                  <Search className="mr-2 h-4 w-4" />
-                  Найти API
+                  <Search className="mr-2 h-3 w-3" />
+                  Найти API и документацию
                 </>
               )}
             </Button>
+            
+            {result && activeTab === 'search' && (
+              <div className="mt-4 space-y-3">
+                <div className="flex items-center gap-2">
+                  <Badge variant="secondary" className="text-xs">Результат поиска</Badge>
+                </div>
+                <div className="bg-muted p-3 rounded-lg max-h-64 overflow-auto">
+                  <pre className="whitespace-pre-wrap text-xs">{result}</pre>
+                </div>
+              </div>
+            )}
           </TabsContent>
 
-          <TabsContent value="tests" className="space-y-4">
+          <TabsContent value="generate" className="space-y-4">
             <div className="space-y-2">
               <label className="text-sm font-medium">Название API сервиса</label>
               <Input
-                placeholder="Например: GitHub, Telegram Bot, Twitter API..."
+                placeholder="Например: GitHub, Telegram Bot, JSONPlaceholder..."
                 value={testServiceName}
                 onChange={(e) => setTestServiceName(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && generateReadyTests()}
+                onKeyDown={(e) => e.key === 'Enter' && generateExecutableTests()}
               />
               <p className="text-xs text-muted-foreground">
-                ИИ создаст готовые к использованию тесты для популярных API
+                ИИ создаст готовые к запуску тесты для основных функций API
               </p>
             </div>
-            <Button 
-              onClick={generateReadyTests} 
-              disabled={loading || !testServiceName.trim()}
-              className="w-full"
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Генерирую тесты...
-                </>
-              ) : (
-                <>
-                  <Zap className="mr-2 h-4 w-4" />
-                  Создать готовые тесты
-                </>
-              )}
-            </Button>
-          </TabsContent>
+            
+            <div className="grid grid-cols-1 gap-3">
+              <Button 
+                onClick={generateExecutableTests} 
+                disabled={loading || !testServiceName.trim()}
+                className="w-full"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Создаю исполняемые тесты...
+                  </>
+                ) : (
+                  <>
+                    <Play className="mr-2 h-4 w-4" />
+                    Создать готовые к запуску тесты
+                  </>
+                )}
+              </Button>
+              
+              <Button 
+                onClick={generateReadyTests} 
+                disabled={loading || !testServiceName.trim()}
+                variant="outline"
+                className="w-full"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Создаю описание...
+                  </>
+                ) : (
+                  <>
+                    <FileText className="mr-2 h-4 w-4" />
+                    Создать описание тестов
+                  </>
+                )}
+              </Button>
+            </div>
 
-          <TabsContent value="scenarios" className="space-y-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Документация API</label>
-              <Textarea
-                placeholder="Вставьте документацию API или OpenAPI спецификацию..."
-                value={apiDoc}
-                onChange={(e) => setApiDoc(e.target.value)}
-                rows={8}
+            <div className="mt-6">
+              <ExecutableTestsPanelNew 
+                tests={executableTests}
+                onTestRun={(testId, result) => {
+                  console.log('Тест выполнен:', testId, result);
+                }}
+                onTestsLoad={(tests) => {
+                  setExecutableTests(tests);
+                }}
               />
             </div>
-            <Button 
-              onClick={generateScenarios} 
-              disabled={loading || !apiDoc.trim()}
-              className="w-full"
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Генерирую...
-                </>
-              ) : (
-                <>
-                  <Zap className="mr-2 h-4 w-4" />
-                  Создать тестовые сценарии
-                </>
-              )}
-            </Button>
-          </TabsContent>
 
-          <TabsContent value="examples" className="space-y-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Документация API</label>
-              <Textarea
-                placeholder="Вставьте документацию API для извлечения примеров..."
-                value={apiDoc}
-                onChange={(e) => setApiDoc(e.target.value)}
-                rows={8}
-              />
-            </div>
-            <Button 
-              onClick={extractExamples} 
-              disabled={loading || !apiDoc.trim()}
-              className="w-full"
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Извлекаю...
-                </>
-              ) : (
-                <>
-                  <FileText className="mr-2 h-4 w-4" />
-                  Извлечь примеры
-                </>
-              )}
-            </Button>
-          </TabsContent>
-
-          <TabsContent value="result" className="space-y-4">
-            {result ? (
-              <div className="space-y-4">
+            {result && activeTab === 'generate' && executableTests.length === 0 && (
+              <div className="mt-6 space-y-4">
                 <div className="flex items-center gap-2">
-                  <Badge variant="secondary">Результат анализа</Badge>
+                  <Badge variant="secondary">Описание тестов</Badge>
                 </div>
-                <div className="bg-muted p-4 rounded-lg">
+                <div className="bg-muted p-4 rounded-lg max-h-96 overflow-auto">
                   <pre className="whitespace-pre-wrap text-sm">{result}</pre>
                 </div>
               </div>
-            ) : (
-              <div className="text-center text-muted-foreground py-8">
-                Выберите действие на других вкладках для получения результата
+            )}
+          </TabsContent>
+
+          <TabsContent value="analyze" className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Документация API или OpenAPI спецификация</label>
+              <Textarea
+                placeholder="Вставьте документацию API, OpenAPI спецификацию или ссылку на документацию..."
+                value={apiDoc}
+                onChange={(e) => setApiDoc(e.target.value)}
+                rows={8}
+              />
+              <p className="text-xs text-muted-foreground">
+                ИИ проанализирует документацию и создаст тестовые сценарии или извлечет примеры
+              </p>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-3">
+              <Button 
+                onClick={generateScenarios} 
+                disabled={loading || !apiDoc.trim()}
+                className="w-full"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Генерирую...
+                  </>
+                ) : (
+                  <>
+                    <Zap className="mr-2 h-4 w-4" />
+                    Создать сценарии
+                  </>
+                )}
+              </Button>
+              
+              <Button 
+                onClick={extractExamples} 
+                disabled={loading || !apiDoc.trim()}
+                variant="outline"
+                className="w-full"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Извлекаю...
+                  </>
+                ) : (
+                  <>
+                    <FileText className="mr-2 h-4 w-4" />
+                    Извлечь примеры
+                  </>
+                )}
+              </Button>
+            </div>
+
+            {result && activeTab === 'analyze' && (
+              <div className="mt-6 space-y-4">
+                <div className="flex items-center gap-2">
+                  <Badge variant="secondary">Результат анализа</Badge>
+                </div>
+                <div className="bg-muted p-4 rounded-lg max-h-96 overflow-auto">
+                  <pre className="whitespace-pre-wrap text-sm">{result}</pre>
+                </div>
               </div>
             )}
           </TabsContent>

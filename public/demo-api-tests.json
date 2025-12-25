@@ -1,0 +1,246 @@
+[
+  {
+    "id": "jsonplaceholder_posts",
+    "name": "📝 Список постов",
+    "description": "Получает список постов из JSONPlaceholder (самый надежный тестовый API)",
+    "method": "GET",
+    "url": "https://jsonplaceholder.typicode.com/posts?_limit=5",
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "body": "",
+    "auth_type": "none",
+    "auth_token": "",
+    "expected_status": 200,
+    "test_type": "smoke",
+    "category": "data",
+    "instructions": "Бесплатный API без регистрации. Всегда работает."
+  },
+  {
+    "id": "jsonplaceholder_users",
+    "name": "👥 Список пользователей",
+    "description": "Получает список пользователей из JSONPlaceholder",
+    "method": "GET",
+    "url": "https://jsonplaceholder.typicode.com/users",
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "body": "",
+    "auth_type": "none",
+    "auth_token": "",
+    "expected_status": 200,
+    "test_type": "functional",
+    "category": "data"
+  },
+  {
+    "id": "jsonplaceholder_create_post",
+    "name": "✏️ Создать пост",
+    "description": "Создает новый пост (имитация, данные не сохраняются)",
+    "method": "POST",
+    "url": "https://jsonplaceholder.typicode.com/posts",
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "body": "{\"title\": \"Тестовый пост от APIfy\", \"body\": \"Это тестовое сообщение\", \"userId\": 1}",
+    "auth_type": "none",
+    "auth_token": "",
+    "expected_status": 201,
+    "test_type": "functional",
+    "category": "crud"
+  },
+  {
+    "id": "httpbin_get_info",
+    "name": "🔍 HTTP GET информация",
+    "description": "Показывает информацию о вашем запросе (заголовки, IP, параметры)",
+    "method": "GET",
+    "url": "https://httpbin.org/get?test=apiffy&demo=true",
+    "headers": {
+      "User-Agent": "APIfy-Tester",
+      "X-Custom-Header": "test-value"
+    },
+    "body": "",
+    "auth_type": "none",
+    "auth_token": "",
+    "expected_status": 200,
+    "test_type": "functional",
+    "category": "data"
+  },
+  {
+    "id": "httpbin_post_data",
+    "name": "📤 HTTP POST данные",
+    "description": "Отправляет POST данные и показывает что получил сервер",
+    "method": "POST",
+    "url": "https://httpbin.org/post",
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "body": "{\"message\": \"Привет от APIfy!\", \"timestamp\": \"2024-12-25T12:00:00Z\", \"test\": true}",
+    "auth_type": "none",
+    "auth_token": "",
+    "expected_status": 200,
+    "test_type": "functional",
+    "category": "crud"
+  },
+  {
+    "id": "rest_countries_russia",
+    "name": "🇷🇺 Информация о России",
+    "description": "Получает подробную информацию о России",
+    "method": "GET",
+    "url": "https://restcountries.com/v3.1/name/russia",
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "body": "",
+    "auth_type": "none",
+    "auth_token": "",
+    "expected_status": 200,
+    "test_type": "functional",
+    "category": "data"
+  },
+  {
+    "id": "rest_countries_all",
+    "name": "🌍 Все страны (первые 10)",
+    "description": "Получает список всех стран мира",
+    "method": "GET",
+    "url": "https://restcountries.com/v3.1/all?fields=name,capital,population",
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "body": "",
+    "auth_type": "none",
+    "auth_token": "",
+    "expected_status": 200,
+    "test_type": "functional",
+    "category": "data"
+  },
+  {
+    "id": "cat_fact",
+    "name": "🐱 Факт о кошках",
+    "description": "Получает случайный интересный факт о кошках",
+    "method": "GET",
+    "url": "https://catfact.ninja/fact",
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "body": "",
+    "auth_type": "none",
+    "auth_token": "",
+    "expected_status": 200,
+    "test_type": "functional",
+    "category": "data"
+  },
+  {
+    "id": "dog_image",
+    "name": "🐕 Случайное фото собаки",
+    "description": "Получает ссылку на случайное изображение собаки",
+    "method": "GET",
+    "url": "https://dog.ceo/api/breeds/image/random",
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "body": "",
+    "auth_type": "none",
+    "auth_token": "",
+    "expected_status": 200,
+    "test_type": "functional",
+    "category": "data"
+  },
+  {
+    "id": "dog_breeds",
+    "name": "🐕‍🦺 Список пород собак",
+    "description": "Получает список всех пород собак",
+    "method": "GET",
+    "url": "https://dog.ceo/api/breeds/list/all",
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "body": "",
+    "auth_type": "none",
+    "auth_token": "",
+    "expected_status": 200,
+    "test_type": "functional",
+    "category": "data"
+  },
+  {
+    "id": "advice_slip",
+    "name": "💡 Случайный совет",
+    "description": "Получает случайный жизненный совет на английском языке",
+    "method": "GET",
+    "url": "https://api.adviceslip.com/advice",
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "body": "",
+    "auth_type": "none",
+    "auth_token": "",
+    "expected_status": 200,
+    "test_type": "functional",
+    "category": "data"
+  },
+  {
+    "id": "joke_api",
+    "name": "😄 Случайная шутка",
+    "description": "Получает случайную шутку на английском языке",
+    "method": "GET",
+    "url": "https://v2.jokeapi.dev/joke/Any?type=single&safe-mode",
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "body": "",
+    "auth_type": "none",
+    "auth_token": "",
+    "expected_status": 200,
+    "test_type": "functional",
+    "category": "data"
+  },
+  {
+    "id": "httpbin_status_codes",
+    "name": "📊 Тест статус кодов",
+    "description": "Тестирует различные HTTP статус коды",
+    "method": "GET",
+    "url": "https://httpbin.org/status/418",
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "body": "",
+    "auth_type": "none",
+    "auth_token": "",
+    "expected_status": 418,
+    "test_type": "functional",
+    "category": "data",
+    "instructions": "Этот тест вернет статус 418 'I'm a teapot' - это нормально!"
+  },
+  {
+    "id": "httpbin_delay",
+    "name": "⏱️ Тест задержки",
+    "description": "Тестирует запрос с задержкой в 2 секунды",
+    "method": "GET",
+    "url": "https://httpbin.org/delay/2",
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "body": "",
+    "auth_type": "none",
+    "auth_token": "",
+    "expected_status": 200,
+    "test_type": "functional",
+    "category": "data",
+    "instructions": "Этот запрос специально задерживается на 2 секунды"
+  },
+  {
+    "id": "ip_info",
+    "name": "🌐 Информация об IP",
+    "description": "Получает информацию о вашем IP адресе и местоположении",
+    "method": "GET",
+    "url": "https://ipapi.co/json/",
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "body": "",
+    "auth_type": "none",
+    "auth_token": "",
+    "expected_status": 200,
+    "test_type": "functional",
+    "category": "data"
+  }
+]
