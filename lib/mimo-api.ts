@@ -131,9 +131,85 @@ export class MimoAPI {
   // Демо-ответы когда превышен лимит API
   private getDemoResponse(messages: MimoMessage[]): string {
     const userMessage = messages[messages.length - 1]?.content || '';
+    const isExecutableTests = userMessage.includes('generateExecutableTests') || userMessage.includes('ТОЛЬКО JSON массив');
     const isTestGeneration = userMessage.includes('готовых тестов') || userMessage.includes('формате JSON');
     
     if (userMessage.toLowerCase().includes('github')) {
+      if (isExecutableTests) {
+        return JSON.stringify([
+          {
+            "id": "github_user_info",
+            "name": "Информация о пользователе",
+            "description": "Получает публичную информацию о пользователе GitHub",
+            "method": "GET",
+            "url": "https://api.github.com/users/octocat",
+            "headers": {
+              "Accept": "application/vnd.github+json",
+              "User-Agent": "APIfy-Tester"
+            },
+            "body": "",
+            "auth_type": "none",
+            "auth_token": "",
+            "expected_status": 200,
+            "test_type": "smoke",
+            "category": "data",
+            "instructions": "Публичный эндпоинт, аутентификация не требуется"
+          },
+          {
+            "id": "github_repo_info",
+            "name": "Информация о репозитории",
+            "description": "Получает информацию о публичном репозитории",
+            "method": "GET",
+            "url": "https://api.github.com/repos/microsoft/vscode",
+            "headers": {
+              "Accept": "application/vnd.github+json",
+              "User-Agent": "APIfy-Tester"
+            },
+            "body": "",
+            "auth_type": "none",
+            "auth_token": "",
+            "expected_status": 200,
+            "test_type": "functional",
+            "category": "data"
+          },
+          {
+            "id": "github_search_repos",
+            "name": "Поиск репозиториев",
+            "description": "Ищет репозитории по ключевому слову",
+            "method": "GET",
+            "url": "https://api.github.com/search/repositories?q=javascript&sort=stars&order=desc&per_page=5",
+            "headers": {
+              "Accept": "application/vnd.github+json",
+              "User-Agent": "APIfy-Tester"
+            },
+            "body": "",
+            "auth_type": "none",
+            "auth_token": "",
+            "expected_status": 200,
+            "test_type": "functional",
+            "category": "search"
+          },
+          {
+            "id": "github_current_user",
+            "name": "Текущий пользователь",
+            "description": "Получает информацию об аутентифицированном пользователе",
+            "method": "GET",
+            "url": "https://api.github.com/user",
+            "headers": {
+              "Accept": "application/vnd.github+json",
+              "User-Agent": "APIfy-Tester"
+            },
+            "body": "",
+            "auth_type": "bearer",
+            "auth_token": "",
+            "expected_status": 200,
+            "test_type": "functional",
+            "category": "auth",
+            "instructions": "Требуется Personal Access Token. Создайте в Settings -> Developer settings -> Personal access tokens"
+          }
+        ]);
+      }
+      
       if (isTestGeneration) {
         return `# Готовые тесты для GitHub API
 
@@ -151,70 +227,9 @@ export class MimoAPI {
     "body": "",
     "auth_type": "none",
     "auth_details": "Публичный эндпоинт, аутентификация не требуется"
-  },
-  {
-    "name": "Получить информацию о репозитории",
-    "description": "Тестирует получение информации о публичном репозитории",
-    "method": "GET",
-    "url": "https://api.github.com/repos/microsoft/vscode",
-    "headers": {
-      "Accept": "application/vnd.github+json",
-      "User-Agent": "APIfy-Tester"
-    },
-    "body": "",
-    "auth_type": "none",
-    "auth_details": "Публичный репозиторий, аутентификация не требуется"
-  },
-  {
-    "name": "Поиск репозиториев",
-    "description": "Тестирует поиск репозиториев по ключевому слову",
-    "method": "GET",
-    "url": "https://api.github.com/search/repositories?q=javascript&sort=stars&order=desc&per_page=5",
-    "headers": {
-      "Accept": "application/vnd.github+json",
-      "User-Agent": "APIfy-Tester"
-    },
-    "body": "",
-    "auth_type": "none",
-    "auth_details": "Публичный поиск, аутентификация не требуется"
-  },
-  {
-    "name": "Получить информацию о текущем пользователе",
-    "description": "Тестирует получение информации об аутентифицированном пользователе",
-    "method": "GET",
-    "url": "https://api.github.com/user",
-    "headers": {
-      "Accept": "application/vnd.github+json",
-      "Authorization": "Bearer YOUR_GITHUB_TOKEN",
-      "User-Agent": "APIfy-Tester"
-    },
-    "body": "",
-    "auth_type": "bearer",
-    "auth_details": "Требуется Personal Access Token. Создайте в Settings -> Developer settings -> Personal access tokens"
-  },
-  {
-    "name": "Создать новый репозиторий",
-    "description": "Тестирует создание нового приватного репозитория",
-    "method": "POST",
-    "url": "https://api.github.com/user/repos",
-    "headers": {
-      "Accept": "application/vnd.github+json",
-      "Authorization": "Bearer YOUR_GITHUB_TOKEN",
-      "Content-Type": "application/json",
-      "User-Agent": "APIfy-Tester"
-    },
-    "body": "{\\"name\\": \\"test-repo-from-apify\\", \\"description\\": \\"Тестовый репозиторий созданный через APIfy\\", \\"private\\": true}",
-    "auth_type": "bearer",
-    "auth_details": "Требуется Personal Access Token с правами 'repo'. ВНИМАНИЕ: Этот тест создаст реальный репозиторий!"
   }
 ]
 \`\`\`
-
-**Инструкции по использованию:**
-1. Скопируйте нужный тест
-2. Для тестов с аутентификацией замените YOUR_GITHUB_TOKEN на ваш токен
-3. Вставьте данные в форму тестирования
-4. Запустите тест
 
 *Примечание: Это демо-ответ, так как превышен лимит запросов к AI API.*`;
       }
@@ -257,6 +272,45 @@ curl -H "Authorization: token YOUR_TOKEN" https://api.github.com/user
     }
     
     if (userMessage.toLowerCase().includes('telegram')) {
+      if (isExecutableTests) {
+        return JSON.stringify([
+          {
+            "id": "telegram_get_me",
+            "name": "Информация о боте",
+            "description": "Получает информацию о боте через метод getMe",
+            "method": "GET",
+            "url": "https://api.telegram.org/botYOUR_BOT_TOKEN/getMe",
+            "headers": {
+              "Content-Type": "application/json"
+            },
+            "body": "",
+            "auth_type": "none",
+            "auth_token": "",
+            "expected_status": 200,
+            "test_type": "smoke",
+            "category": "auth",
+            "instructions": "Замените YOUR_BOT_TOKEN на токен вашего бота от @BotFather"
+          },
+          {
+            "id": "telegram_send_message",
+            "name": "Отправить сообщение",
+            "description": "Отправляет текстовое сообщение в чат",
+            "method": "POST",
+            "url": "https://api.telegram.org/botYOUR_BOT_TOKEN/sendMessage",
+            "headers": {
+              "Content-Type": "application/json"
+            },
+            "body": "{\"chat_id\": \"YOUR_CHAT_ID\", \"text\": \"Привет! Это тестовое сообщение от APIfy\"}",
+            "auth_type": "none",
+            "auth_token": "",
+            "expected_status": 200,
+            "test_type": "functional",
+            "category": "data",
+            "instructions": "Замените YOUR_BOT_TOKEN и YOUR_CHAT_ID на реальные значения"
+          }
+        ]);
+      }
+      
       if (isTestGeneration) {
         return `# Готовые тесты для Telegram Bot API
 
@@ -273,37 +327,9 @@ curl -H "Authorization: token YOUR_TOKEN" https://api.github.com/user
     "body": "",
     "auth_type": "none",
     "auth_details": "Токен передается в URL. Получите токен у @BotFather в Telegram"
-  },
-  {
-    "name": "Отправить сообщение",
-    "description": "Тестирует отправку текстового сообщения в чат",
-    "method": "POST",
-    "url": "https://api.telegram.org/botYOUR_BOT_TOKEN/sendMessage",
-    "headers": {
-      "Content-Type": "application/json"
-    },
-    "body": "{\\"chat_id\\": \\"YOUR_CHAT_ID\\", \\"text\\": \\"Привет! Это тестовое сообщение от APIfy\\"}",
-    "auth_type": "none",
-    "auth_details": "Замените YOUR_BOT_TOKEN на токен бота и YOUR_CHAT_ID на ID чата"
-  },
-  {
-    "name": "Получить обновления",
-    "description": "Тестирует получение новых сообщений через long polling",
-    "method": "GET",
-    "url": "https://api.telegram.org/botYOUR_BOT_TOKEN/getUpdates?limit=10&timeout=30",
-    "headers": {
-      "Content-Type": "application/json"
-    },
-    "body": "",
-    "auth_type": "none",
-    "auth_details": "Получает последние 10 обновлений с таймаутом 30 секунд"
   }
 ]
 \`\`\`
-
-**Как получить данные для тестов:**
-1. **Bot Token:** Напишите @BotFather в Telegram, создайте бота командой /newbot
-2. **Chat ID:** Напишите боту, затем откройте https://api.telegram.org/botYOUR_TOKEN/getUpdates
 
 *Примечание: Это демо-ответ, так как превышен лимит запросов к AI API.*`;
       }
@@ -332,6 +358,300 @@ curl https://api.telegram.org/bot{TOKEN}/sendMessage \\
 
 *Примечание: Это демо-ответ, так как превышен лимит запросов к AI API.*`;
     }
+
+    if (userMessage.toLowerCase().includes('reqres')) {
+      if (isExecutableTests) {
+        return JSON.stringify([
+          {
+            "id": "reqres_users_list",
+            "name": "Список пользователей",
+            "description": "Получает список пользователей с пагинацией",
+            "method": "GET",
+            "url": "https://reqres.in/api/users?page=1",
+            "headers": {
+              "Content-Type": "application/json"
+            },
+            "body": "",
+            "auth_type": "none",
+            "auth_token": "",
+            "expected_status": 200,
+            "test_type": "functional",
+            "category": "data"
+          },
+          {
+            "id": "reqres_user_single",
+            "name": "Конкретный пользователь",
+            "description": "Получает информацию о пользователе по ID",
+            "method": "GET",
+            "url": "https://reqres.in/api/users/2",
+            "headers": {
+              "Content-Type": "application/json"
+            },
+            "body": "",
+            "auth_type": "none",
+            "auth_token": "",
+            "expected_status": 200,
+            "test_type": "functional",
+            "category": "data"
+          },
+          {
+            "id": "reqres_create_user",
+            "name": "Создать пользователя",
+            "description": "Создает нового пользователя",
+            "method": "POST",
+            "url": "https://reqres.in/api/users",
+            "headers": {
+              "Content-Type": "application/json"
+            },
+            "body": "{\"name\": \"APIfy Tester\", \"job\": \"QA Engineer\"}",
+            "auth_type": "none",
+            "auth_token": "",
+            "expected_status": 201,
+            "test_type": "functional",
+            "category": "crud"
+          },
+          {
+            "id": "reqres_login",
+            "name": "Вход в систему",
+            "description": "Тестирует аутентификацию пользователя",
+            "method": "POST",
+            "url": "https://reqres.in/api/login",
+            "headers": {
+              "Content-Type": "application/json"
+            },
+            "body": "{\"email\": \"eve.holt@reqres.in\", \"password\": \"cityslicka\"}",
+            "auth_type": "none",
+            "auth_token": "",
+            "expected_status": 200,
+            "test_type": "functional",
+            "category": "auth"
+          }
+        ]);
+      }
+      
+      return `# ReqRes API
+
+**Официальная документация:** https://reqres.in/
+
+**Базовый URL:** https://reqres.in/api
+
+**Аутентификация:** Не требуется для большинства эндпоинтов
+
+## Основные эндпоинты:
+
+1. **Пользователи:** GET /users, POST /users, PUT /users/{id}
+2. **Аутентификация:** POST /login, POST /register
+3. **Ресурсы:** GET /unknown
+
+*Примечание: Это демо-ответ, так как превышен лимит запросов к AI API.*`;
+    }
+
+    if (userMessage.toLowerCase().includes('httpbin')) {
+      if (isExecutableTests) {
+        return JSON.stringify([
+          {
+            "id": "httpbin_get_test",
+            "name": "GET запрос с параметрами",
+            "description": "Тестирует GET запрос и отображение параметров",
+            "method": "GET",
+            "url": "https://httpbin.org/get?param1=test&param2=apiffy",
+            "headers": {
+              "User-Agent": "APIfy-Tester",
+              "X-Custom-Header": "test-value"
+            },
+            "body": "",
+            "auth_type": "none",
+            "auth_token": "",
+            "expected_status": 200,
+            "test_type": "functional",
+            "category": "data"
+          },
+          {
+            "id": "httpbin_post_json",
+            "name": "POST с JSON данными",
+            "description": "Тестирует отправку JSON данных",
+            "method": "POST",
+            "url": "https://httpbin.org/post",
+            "headers": {
+              "Content-Type": "application/json"
+            },
+            "body": "{\"test\": \"APIfy POST test\", \"timestamp\": \"" + new Date().toISOString() + "\"}",
+            "auth_type": "none",
+            "auth_token": "",
+            "expected_status": 200,
+            "test_type": "functional",
+            "category": "crud"
+          },
+          {
+            "id": "httpbin_status_test",
+            "name": "Тест статус кода 418",
+            "description": "Тестирует специальный статус код 418 I'm a teapot",
+            "method": "GET",
+            "url": "https://httpbin.org/status/418",
+            "headers": {
+              "Content-Type": "application/json"
+            },
+            "body": "",
+            "auth_type": "none",
+            "auth_token": "",
+            "expected_status": 418,
+            "test_type": "functional",
+            "category": "data"
+          }
+        ]);
+      }
+      
+      return `# HTTPBin API
+
+**Официальная документация:** https://httpbin.org/
+
+**Базовый URL:** https://httpbin.org
+
+**Аутентификация:** Не требуется
+
+## HTTP методы для тестирования:
+
+1. **GET** /get - тестирование GET запросов
+2. **POST** /post - тестирование POST запросов  
+3. **PUT** /put - тестирование PUT запросов
+4. **DELETE** /delete - тестирование DELETE запросов
+
+*Примечание: Это демо-ответ, так как превышен лимит запросов к AI API.*`;
+    }
+
+    // Универсальные демо-тесты для неизвестных сервисов
+    if (isExecutableTests) {
+      return JSON.stringify([
+        {
+          "id": "jsonplaceholder_posts",
+          "name": "Список постов",
+          "description": "Получает список всех постов из JSONPlaceholder",
+          "method": "GET",
+          "url": "https://jsonplaceholder.typicode.com/posts?_limit=5",
+          "headers": {
+            "Content-Type": "application/json"
+          },
+          "body": "",
+          "auth_type": "none",
+          "auth_token": "",
+          "expected_status": 200,
+          "test_type": "smoke",
+          "category": "data"
+        },
+        {
+          "id": "jsonplaceholder_post",
+          "name": "Конкретный пост",
+          "description": "Получает информацию о посте с ID 1",
+          "method": "GET",
+          "url": "https://jsonplaceholder.typicode.com/posts/1",
+          "headers": {
+            "Content-Type": "application/json"
+          },
+          "body": "",
+          "auth_type": "none",
+          "auth_token": "",
+          "expected_status": 200,
+          "test_type": "functional",
+          "category": "data"
+        },
+        {
+          "id": "httpbin_get",
+          "name": "HTTP GET тест",
+          "description": "Тестирует GET запрос с параметрами",
+          "method": "GET",
+          "url": "https://httpbin.org/get?test=apiffy&source=demo",
+          "headers": {
+            "User-Agent": "APIfy-Tester"
+          },
+          "body": "",
+          "auth_type": "none",
+          "auth_token": "",
+          "expected_status": 200,
+          "test_type": "functional",
+          "category": "data"
+        },
+        {
+          "id": "rest_countries",
+          "name": "Информация о стране",
+          "description": "Получает информацию о России",
+          "method": "GET",
+          "url": "https://restcountries.com/v3.1/name/russia",
+          "headers": {
+            "Content-Type": "application/json"
+          },
+          "body": "",
+          "auth_type": "none",
+          "auth_token": "",
+          "expected_status": 200,
+          "test_type": "functional",
+          "category": "data"
+        },
+        {
+          "id": "cat_fact",
+          "name": "Факт о кошках",
+          "description": "Получает случайный факт о кошках",
+          "method": "GET",
+          "url": "https://catfact.ninja/fact",
+          "headers": {
+            "Content-Type": "application/json"
+          },
+          "body": "",
+          "auth_type": "none",
+          "auth_token": "",
+          "expected_status": 200,
+          "test_type": "functional",
+          "category": "data"
+        },
+        {
+          "id": "dog_image",
+          "name": "Случайное фото собаки",
+          "description": "Получает ссылку на случайное изображение собаки",
+          "method": "GET",
+          "url": "https://dog.ceo/api/breeds/image/random",
+          "headers": {
+            "Content-Type": "application/json"
+          },
+          "body": "",
+          "auth_type": "none",
+          "auth_token": "",
+          "expected_status": 200,
+          "test_type": "functional",
+          "category": "data"
+        },
+        {
+          "id": "advice_slip",
+          "name": "Случайный совет",
+          "description": "Получает случайный совет на английском языке",
+          "method": "GET",
+          "url": "https://api.adviceslip.com/advice",
+          "headers": {
+            "Content-Type": "application/json"
+          },
+          "body": "",
+          "auth_type": "none",
+          "auth_token": "",
+          "expected_status": 200,
+          "test_type": "functional",
+          "category": "data"
+        },
+        {
+          "id": "httpbin_post",
+          "name": "HTTP POST тест",
+          "description": "Тестирует POST запрос с JSON данными",
+          "method": "POST",
+          "url": "https://httpbin.org/post",
+          "headers": {
+            "Content-Type": "application/json"
+          },
+          "body": "{\"test\": \"APIfy POST test\", \"timestamp\": \"" + new Date().toISOString() + "\"}",
+          "auth_type": "none",
+          "auth_token": "",
+          "expected_status": 200,
+          "test_type": "functional",
+          "category": "crud"
+        }
+      ]);
+    }
     
     if (isTestGeneration) {
       return `# Готовые тесты для "${userMessage.split('"')[1] || 'API'}"
@@ -357,11 +677,6 @@ curl https://api.telegram.org/bot{TOKEN}/sendMessage \\
   }
 ]
 \`\`\`
-
-**Рекомендации:**
-1. Начните с публичных эндпоинтов (без аутентификации)
-2. Проверьте документацию API для получения примеров
-3. Используйте тестовые данные, не реальные
 
 *Попробуйте позже, когда лимит API обновится.*`;
     }
@@ -445,6 +760,57 @@ curl https://api.telegram.org/bot{TOKEN}/sendMessage \\
     return this.chat(messages);
   }
 
+  async generateExecutableTests(serviceName: string): Promise<string> {
+    const messages: MimoMessage[] = [
+      {
+        role: 'system',
+        content: `Ты эксперт по API тестированию. Создаешь готовые к запуску тесты для популярных API сервисов. 
+        
+ВАЖНО: Ответ должен содержать ТОЛЬКО валидный JSON массив тестов без дополнительного текста или markdown разметки.
+
+Каждый тест должен быть готов к немедленному выполнению и содержать реальные рабочие эндпоинты.`
+      },
+      {
+        role: 'user',
+        content: `Создай готовые к запуску тесты для "${serviceName}" API. 
+
+Верни ТОЛЬКО JSON массив в таком формате:
+[
+  {
+    "id": "уникальный_id",
+    "name": "Краткое название теста",
+    "description": "Подробное описание что тестирует",
+    "method": "GET/POST/PUT/DELETE",
+    "url": "полный_рабочий_URL",
+    "headers": {
+      "Content-Type": "application/json",
+      "User-Agent": "APIfy-Tester"
+    },
+    "body": "",
+    "auth_type": "none/bearer/api-key/basic",
+    "auth_token": "",
+    "expected_status": 200,
+    "test_type": "functional/smoke/integration",
+    "category": "auth/data/search/crud",
+    "instructions": "Инструкции по настройке если нужна аутентификация"
+  }
+]
+
+Требования:
+1. Минимум 3-5 тестов покрывающих основные функции API
+2. Начни с публичных эндпоинтов (auth_type: "none")
+3. Включи тесты для аутентификации если API её требует
+4. URL должны быть реальными и рабочими
+5. Добавь инструкции для получения токенов если нужно
+6. Категоризируй тесты (auth, data, search, crud)
+
+Популярные сервисы для примера: GitHub, Telegram Bot, JSONPlaceholder, OpenWeather, REST Countries, Dog API, Cat API, News API.`
+      }
+    ];
+
+    return this.chat(messages, { max_completion_tokens: 2000 });
+  }
+
   async generateTestScenarios(apiDoc: string): Promise<string> {
     const messages: MimoMessage[] = [
       {
@@ -492,6 +858,41 @@ ${apiDoc}
 6. Пример ответа (если есть)
 
 Структурируй ответ в удобном для чтения формате.`
+      }
+    ];
+
+    return this.chat(messages);
+  }
+
+  async validateTestResult(test: any, result: any): Promise<string> {
+    const messages: MimoMessage[] = [
+      {
+        role: 'system',
+        content: 'Ты эксперт по тестированию API. Анализируешь результаты тестов и даешь оценку их корректности. Отвечай кратко и по делу на русском языке.'
+      },
+      {
+        role: 'user',
+        content: `Проанализируй результат теста API:
+
+**Тест:**
+- Название: ${test.name}
+- Описание: ${test.description}
+- Ожидаемый статус: ${test.expected_status}
+- Категория: ${test.category}
+
+**Результат:**
+- Фактический статус: ${result.status}
+- Ответ: ${result.response}
+
+Оцени:
+1. Соответствует ли результат ожиданиям?
+2. Есть ли проблемы в ответе?
+3. Какие рекомендации по улучшению?
+
+Ответь кратко в формате:
+ОЦЕНКА: [0-100]%
+ПРОБЛЕМЫ: [список проблем или "нет"]
+РЕКОМЕНДАЦИИ: [список рекомендаций или "нет"]`
       }
     ];
 

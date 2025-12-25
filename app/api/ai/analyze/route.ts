@@ -41,6 +41,16 @@ export async function POST(request: NextRequest) {
         result = await mimo.generateReadyTests(data.serviceName);
         break;
 
+      case 'generateExecutableTests':
+        if (!data?.serviceName) {
+          return NextResponse.json(
+            { error: 'Не указано название сервиса' },
+            { status: 400 }
+          );
+        }
+        result = await mimo.generateExecutableTests(data.serviceName);
+        break;
+
       case 'generateScenarios':
         if (!data?.apiDoc) {
           return NextResponse.json(
@@ -59,6 +69,16 @@ export async function POST(request: NextRequest) {
           );
         }
         result = await mimo.extractExamples(data.apiDoc);
+        break;
+
+      case 'validateTestResult':
+        if (!data?.test || !data?.result) {
+          return NextResponse.json(
+            { error: 'Не указаны данные теста или результат' },
+            { status: 400 }
+          );
+        }
+        result = await mimo.validateTestResult(data.test, data.result);
         break;
 
       default:

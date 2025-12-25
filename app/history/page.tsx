@@ -24,10 +24,7 @@ export default function HistoryPage() {
   const [history, setHistory] = useState<TestHistory[]>([])
   const [loading, setLoading] = useState(true)
 
-  const mockUser = {
-    id: 'guest-user',
-    email: 'guest@example.com'
-  }
+  const mockUser = undefined; // Убираем мок пользователя для показа кнопки "Войти"
 
   useEffect(() => {
     const loadHistory = () => {
