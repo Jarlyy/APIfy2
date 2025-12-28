@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Тест обнаружения плейсхолдеров</title>
+</head>
+<body>
+    <h1>Тест обнаружения плейсхолдеров</h1>
+    <div id="results"></div>
+
+    <script>
+        // Копируем паттерны из token-utils.ts
+        const TOKEN_PATTERNS = [
+            { pattern: /YOUR_TOKEN/gi, type: 'token', description: 'API токен для аутентификации' },
+            { pattern: /YOUR_API_TOKEN/gi, type: 'token', description: 'API токен для доступа к сервису' },
+            { pattern: /YOUR_ACCESS_TOKEN/gi, type: 'token', description: 'Токен доступа' },
+            { pattern: /YOUR_AUTH_TOKEN/gi, type: 'token', description: 'Токен аутентификации' },
+            { pattern: /YOUR_BEARER_TOKEN/gi, type: 'token', description: 'Bearer токен' },
+            { pattern: /YOUR_BOT_TOKEN/gi, type: 'token', description: 'Токен Telegram бота от @BotFather' },
+            { pattern: /YOUR_GITHUB_TOKEN/gi, type: 'token', description: 'Personal Access Token от GitHub' },
+            { pattern: /YOUR_OPENAI_KEY/gi, type: 'key', description: 'API ключ OpenAI' },
+            { pattern: /YOUR_WEATHER_KEY/gi, type: 'key', description: 'API ключ OpenWeatherMap' },
+            { pattern: /YOUR_API_KEY/gi, type: 'key', description: 'API ключ для доступа к сервису' },
+            { pattern: /YOUR_KEY/gi, type: 'key', description: 'Ключ API' },
+            { pattern: /API_KEY_HERE/gi, type: 'key', description: 'Вставьте ваш API ключ' },
+            { pattern: /YOUR_CHAT_ID/gi, type: 'id', description: 'ID чата в Telegram' },
+            { pattern: /YOUR_USER_ID/gi, type: 'id', description: 'ID пользователя' },
+            { pattern: /YOUR_CHANNEL_ID/gi, type: 'id', description: 'ID канала' },
+            { pattern: /YOUR_ID/gi, type: 'id', description: 'Ваш ID' },
+            { pattern: /YOUR_DOMAIN/gi, type: 'url', description: 'Ваш домен' },
+            { pattern: /YOUR_URL/gi, type: 'url', description: 'Ваш URL' },
+            { pattern: /YOUR_WEBHOOK_URL/gi, type: 'url', description: 'URL вашего webhook' },
+        ];
+
+        function findTokenPlaceholders(text) {
+            const found = new Set();
+            const placeholders = [];
+
+            console.log('🔍 Поиск плейсхолдеров в тексте:', text);
+
+            TOKEN_PATTERNS.forEach(({ pattern, type, description }) => {
+                const matches = text.match(pattern);
+                if (matches) {
+                    console.log(`✅ Найдены совпадения для паттерна ${pattern}:`, matches);
+                    matches.forEach(match => {
+                        const normalized = match.toUpperCase();
+                        if (!found.has(normalized)) {
+                            found.add(normalized);
+                            placeholders.push({
+                                placeholder: normalized,
+                                description,
+                                type
+                            });
+                        }
+                    });
+                } else {
+                    console.log(`❌ Нет совпадений для паттерна ${pattern}`);
+                }
+            });
+
+            console.log('📋 Итоговые плейсхолдеры:', placeholders);
+            return placeholders;
+        }
+
+        // Тестовые данные
+        const testCases = [
+            {
+                name: 'GitHub тест',
+                url: 'https://api.github.com/user',
+                auth_token: 'YOUR_GITHUB_TOKEN',
+                body: '',
+                headers: {}
+            },
+            {
+                name: 'Telegram тест',
+                url: 'https://api.telegram.org/botYOUR_BOT_TOKEN/getMe',
+                auth_token: '',
+                body: '',
+                headers: {}
+            },
+            {
+                name: 'Telegram сообщение',
+                url: 'https://api.telegram.org/botYOUR_BOT_TOKEN/sendMessage',
+                auth_token: '',
+                body: '{"chat_id": "YOUR_CHAT_ID", "text": "test"}',
+                headers: {}
+            },
+            {
+                name: 'Обычный тест',
+                url: 'https://jsonplaceholder.typicode.com/posts/1',
+                auth_token: '',
+                body: '',
+                headers: {}
+            }
+        ];
+
+        const resultsDiv = document.getElementById('results');
+
+        testCases.forEach(test => {
+            const textToCheck = [
+                test.url || '',
+                test.auth_token || '',
+                test.body || '',
+                JSON.stringify(test.headers || {}),
+            ].join(' ');
+
+            const placeholders = findTokenPlaceholders(textToCheck);
+            
+            const div = document.createElement('div');
+            div.style.border = '1px solid #ccc';
+            div.style.margin = '10px';
+            div.style.padding = '10px';
+            
+            div.innerHTML = `
+                <h3>${test.name}</h3>
+                <p><strong>Текст для проверки:</strong> ${textToCheck}</p>
+                <p><strong>Найдено плейсхолдеров:</strong> ${placeholders.length}</p>
+                <p><strong>Плейсхолдеры:</strong> ${JSON.stringify(placeholders, null, 2)}</p>
+            `;
+            
+            resultsDiv.appendChild(div);
+        });
+    </script>
+</body>
+</html>

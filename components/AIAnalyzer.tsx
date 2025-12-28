@@ -7,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
 import { Loader2, Brain, Search, FileText, Zap, Play } from 'lucide-react';
 import { ExecutableTestsPanelNew } from './ExecutableTestsPanelNew';
 
@@ -39,6 +40,7 @@ export function AIAnalyzer({ onApiFound, onTestGenerated }: AIAnalyzerProps) {
   const [result, setResult] = useState('');
   const [activeTab, setActiveTab] = useState('search');
   const [executableTests, setExecutableTests] = useState<ExecutableTest[]>([]);
+  const [useProxy, setUseProxy] = useState(false);
 
   const analyzeService = async () => {
     if (!serviceName.trim()) return;
@@ -350,9 +352,30 @@ export function AIAnalyzer({ onApiFound, onTestGenerated }: AIAnalyzerProps) {
               </Button>
             </div>
 
-            <div className="mt-6">
+            <div className="mt-6 space-y-4">
+              {/* Переключатель прокси */}
+              <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+                <div>
+                  <h4 className="text-sm font-medium">Настройки выполнения тестов</h4>
+                  <p className="text-xs text-muted-foreground">
+                    Прокси помогает обойти CORS ограничения
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Switch
+                    id="useProxyAI"
+                    checked={useProxy}
+                    onCheckedChange={setUseProxy}
+                  />
+                  <label htmlFor="useProxyAI" className="text-xs cursor-pointer">
+                    Использовать прокси
+                  </label>
+                </div>
+              </div>
+
               <ExecutableTestsPanelNew 
                 tests={executableTests}
+                useProxy={useProxy}
                 onTestRun={(testId, result) => {
                   console.log('Тест выполнен:', testId, result);
                 }}
