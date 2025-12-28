@@ -142,7 +142,7 @@ export class MimoAPI {
             "name": "Информация о пользователе",
             "description": "Получает публичную информацию о пользователе GitHub",
             "method": "GET",
-            "url": "https://api.github.com/users/octocat",
+            "url": "https://api.github.com/users/YOUR_USERNAME",
             "headers": {
               "Accept": "application/vnd.github+json",
               "User-Agent": "APIfy-Tester"
@@ -153,14 +153,14 @@ export class MimoAPI {
             "expected_status": 200,
             "test_type": "smoke",
             "category": "data",
-            "instructions": "Публичный эндпоинт, аутентификация не требуется"
+            "instructions": "Замените YOUR_USERNAME на имя пользователя GitHub"
           },
           {
             "id": "github_repo_info",
             "name": "Информация о репозитории",
             "description": "Получает информацию о публичном репозитории",
             "method": "GET",
-            "url": "https://api.github.com/repos/microsoft/vscode",
+            "url": "https://api.github.com/repos/YOUR_USERNAME/YOUR_REPO",
             "headers": {
               "Accept": "application/vnd.github+json",
               "User-Agent": "APIfy-Tester"
@@ -170,24 +170,8 @@ export class MimoAPI {
             "auth_token": "",
             "expected_status": 200,
             "test_type": "functional",
-            "category": "data"
-          },
-          {
-            "id": "github_search_repos",
-            "name": "Поиск репозиториев",
-            "description": "Ищет репозитории по ключевому слову",
-            "method": "GET",
-            "url": "https://api.github.com/search/repositories?q=javascript&sort=stars&order=desc&per_page=5",
-            "headers": {
-              "Accept": "application/vnd.github+json",
-              "User-Agent": "APIfy-Tester"
-            },
-            "body": "",
-            "auth_type": "none",
-            "auth_token": "",
-            "expected_status": 200,
-            "test_type": "functional",
-            "category": "search"
+            "category": "data",
+            "instructions": "Замените YOUR_USERNAME и YOUR_REPO на реальные значения"
           },
           {
             "id": "github_current_user",
@@ -201,7 +185,7 @@ export class MimoAPI {
             },
             "body": "",
             "auth_type": "bearer",
-            "auth_token": "",
+            "auth_token": "YOUR_GITHUB_TOKEN",
             "expected_status": 200,
             "test_type": "functional",
             "category": "auth",
@@ -768,6 +752,17 @@ curl https://api.telegram.org/bot{TOKEN}/sendMessage \\
         
 ВАЖНО: Ответ должен содержать ТОЛЬКО валидный JSON массив тестов без дополнительного текста или markdown разметки.
 
+КРИТИЧЕСКИ ВАЖНО: Если API требует токены, ключи или пользовательские данные, используй ТОЧНО такие плейсхолдеры:
+- YOUR_TOKEN - для общих токенов
+- YOUR_API_KEY - для API ключей  
+- YOUR_BOT_TOKEN - для Telegram ботов
+- YOUR_GITHUB_TOKEN - для GitHub
+- YOUR_CHAT_ID - для Telegram chat ID
+- YOUR_USERNAME - для имен пользователей
+- YOUR_USER_ID - для ID пользователей
+
+НЕ используй {username}, <token>, user, или другие форматы - только указанные выше!
+
 Каждый тест должен быть готов к немедленному выполнению и содержать реальные рабочие эндпоинты.`
       },
       {
@@ -796,15 +791,17 @@ curl https://api.telegram.org/bot{TOKEN}/sendMessage \\
   }
 ]
 
-Требования:
+ОБЯЗАТЕЛЬНЫЕ ТРЕБОВАНИЯ:
 1. Минимум 3-5 тестов покрывающих основные функции API
-2. Начни с публичных эндпоинтов (auth_type: "none")
-3. Включи тесты для аутентификации если API её требует
+2. Начни с публичных эндпоинтов (auth_type: "none") 
+3. Для приватных API используй плейсхолдеры: YOUR_TOKEN, YOUR_API_KEY, YOUR_BOT_TOKEN, YOUR_GITHUB_TOKEN, YOUR_CHAT_ID, YOUR_USERNAME, YOUR_USER_ID
 4. URL должны быть реальными и рабочими
-5. Добавь инструкции для получения токенов если нужно
+5. Добавь подробные инструкции для получения токенов
 6. Категоризируй тесты (auth, data, search, crud)
 
-Популярные сервисы для примера: GitHub, Telegram Bot, JSONPlaceholder, OpenWeather, REST Countries, Dog API, Cat API, News API.`
+Если API требует аутентификации, обязательно используй плейсхолдеры в URL, auth_token или body!
+
+Популярные сервисы: GitHub, Telegram Bot, Twitter, Discord, Slack, OpenAI, Weather API, News API.`
       }
     ];
 
