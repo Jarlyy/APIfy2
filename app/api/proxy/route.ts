@@ -1,87 +1,130 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+export async function GET(request: NextRequest) {
+  return handleProxyRequest(request, 'GET');
+}
+
 export async function POST(request: NextRequest) {
+  return handleProxyRequest(request, 'POST');
+}
+
+export async function PUT(request: NextRequest) {
+  return handleProxyRequest(request, 'PUT');
+}
+
+export async function DELETE(request: NextRequest) {
+  return handleProxyRequest(request, 'DELETE');
+}
+
+export async function PATCH(request: NextRequest) {
+  return handleProxyRequest(request, 'PATCH');
+}
+
+async function handleProxyRequest(request: NextRequest, method: string) {
   try {
-    const { url, method, headers, body } = await request.json();
+    // Получаем целевой URL из параметров
+    const targetUrl = request.nextUrl.searchParams.get('url');
+    
+    if (!targetUrl) {
+      return NextResponse.json(
+        { error: 'URL параметр обязателен' },
+        { status: 400 }
+      );
+    }
 
-    console.log('Прокси запрос:', { url, method });
+    // Проверяем валидность URL
+    let url: URL;
+    try {
+      url = new URL(targetUrl);
+    } catch {
+      return NextResponse.json(
+        { error: 'Невалидный URL' },
+        { status: 400 }
+      );
+    }
 
-    // Выполняем запрос с сервера (CORS не применяется к серверным запросам)
-    const requestOptions: RequestInit = {
-      method: method || 'GET',
-      headers: headers || {},
-    };
+    // Получаем заголовки из запроса
+    const headers: Record<string, string> = {};
+    request.headers.forEach((value, key) => {
+      // Пропускаем служебные заголовки
+      if (!key.startsWith('x-') && 
+          key !== 'host' && 
+          key !== 'connection' && 
+          key !== 'content-length') {
+        headers[key] = value;
+      }
+    });
 
-    // Добавляем тело запроса только если это не GET и тело не пустое
-    if (body && method !== 'GET') {
-      if (typeof body === 'string') {
-        requestOptions.body = body;
-      } else {
-        requestOptions.body = JSON.stringify(body);
+    // Получаем тело запроса если есть
+    let body: string | undefined;
+    if (method !== 'GET' && method !== 'DELETE') {
+      try {
+        body = await request.text();
+      } catch {
+        body = undefined;
       }
     }
 
-    console.log('Выполняю запрос:', { url, method, headers, hasBody: !!requestOptions.body });
-
-    const response = await fetch(url, requestOptions);
+    // Выполняем запрос к целевому API
+    const response = await fetch(targetUrl, {
+      method,
+      headers,
+      body,
+    });
 
     // Получаем данные ответа
-    let responseData;
     const contentType = response.headers.get('content-type');
+    let data;
     
-    try {
-      if (contentType && contentType.includes('application/json')) {
-        responseData = await response.json();
-      } else {
-        responseData = await response.text();
-      }
-    } catch (parseError) {
-      responseData = await response.text();
+    if (contentType?.includes('application/json')) {
+      data = await response.json();
+    } else {
+      data = await response.text();
     }
 
-    // Собираем заголовки ответа
-    const responseHeaders: Record<string, string> = {};
-    response.headers.forEach((value, key) => {
-      responseHeaders[key] = value;
-    });
-
     // Возвращаем ответ с CORS заголовками
-    return NextResponse.json({
-      status: response.status,
-      statusText: response.statusText,
-      data: responseData,
-      headers: responseHeaders,
-    }, {
-      status: 200,
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, PATCH, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-API-Key',
+    return NextResponse.json(
+      {
+        status: response.status,
+        statusText: response.statusText,
+        data,
+        headers: Object.fromEntries(response.headers.entries()),
+      },
+      {
+        status: 200,
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, PATCH, OPTIONS',
+          'Access-Control-Allow-Headers': '*',
+        },
       }
-    });
+    );
 
   } catch (error) {
-    console.error('Ошибка прокси:', error);
-    
-    return NextResponse.json({
-      error: error instanceof Error ? error.message : 'Неизвестная ошибка'
-    }, { 
-      status: 500,
-      headers: {
-        'Access-Control-Allow-Origin': '*',
+    console.error('Proxy error:', error);
+    return NextResponse.json(
+      { 
+        error: error instanceof Error ? error.message : 'Ошибка прокси',
+        details: String(error)
+      },
+      { 
+        status: 500,
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+        },
       }
-    });
+    );
   }
 }
 
-// Обработка preflight запросов
-export async function OPTIONS(request: NextRequest) {
+// Обработка OPTIONS запросов для CORS preflight
+export async function OPTIONS() {
   return new NextResponse(null, {
     status: 200,
     headers: {
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, PATCH, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-API-Key',
+      'Access-Control-Allow-Headers': '*',
     },
   });
 }

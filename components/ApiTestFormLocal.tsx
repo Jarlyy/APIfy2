@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import Toast from './Toast'
+import CorsProxySettings from './CorsProxySettings'
+import { applyProxy, getCurrentProxy, getCorsProxyEnabled, setCorsProxyEnabled } from '@/lib/cors-proxy'
 
 type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH'
 type AuthType = 'none' | 'bearer' | 'api-key' | 'basic'
@@ -57,6 +59,12 @@ export default function ApiTestFormLocal({ userId, generatedTests = [], onTestsU
   const [error, setError] = useState<string | null>(null)
   const [showToast, setShowToast] = useState(false)
   const [toastMessage, setToastMessage] = useState('')
+  const [corsProxyEnabled, setCorsProxyEnabledState] = useState(false)
+
+  // Загрузка настройки CORS proxy
+  useEffect(() => {
+    setCorsProxyEnabledState(getCorsProxyEnabled())
+  }, [])
 
   // Загрузка шаблона из localStorage
   useEffect(() => {
@@ -198,6 +206,43 @@ export default function ApiTestFormLocal({ userId, generatedTests = [], onTestsU
 
       const startTime = Date.now()
       
+      // Применяем CORS прокси если включен
+      if (corsProxyEnabled) {
+        const proxyType = getCurrentProxy();
+        
+        if (proxyType === 'local') {
+          // Используем локальный прокси через API
+          const proxyUrl = `/api/proxy?url=${encodeURIComponent(url)}`;
+          const proxyResponse = await fetch(proxyUrl, {
+            method,
+            headers: requestHeaders,
+            body: requestBody,
+          });
+
+          const proxyResult = await proxyResponse.json();
+          
+          if (!proxyResponse.ok && proxyResult.error) {
+            throw new Error(proxyResult.error);
+          }
+
+          const responseTime = Date.now() - startTime;
+
+          const testResult: TestResult = {
+            status: proxyResult.status,
+            statusText: proxyResult.statusText,
+            responseTime,
+            data: proxyResult.data,
+            headers: proxyResult.headers,
+          };
+
+          setResult(testResult);
+          saveToHistory(testResult);
+          showToastMessage('Тест выполнен успешно');
+          return;
+        }
+      }
+
+      // Обычный запрос без прокси
       const response = await fetch(url, {
         method,
         headers: requestHeaders,
@@ -425,6 +470,30 @@ export default function ApiTestFormLocal({ userId, generatedTests = [], onTestsU
                 />
               </div>
             </div>
+          )}
+
+          <div className="flex items-center gap-2 rounded-md border border-zinc-300 bg-zinc-50 p-3 dark:border-zinc-600 dark:bg-zinc-700">
+            <input
+              type="checkbox"
+              id="corsProxy"
+              checked={corsProxyEnabled}
+              onChange={(e) => {
+                const enabled = e.target.checked
+                setCorsProxyEnabledState(enabled)
+                setCorsProxyEnabled(enabled)
+              }}
+              className="h-4 w-4 rounded border-zinc-300 text-blue-600 focus:ring-2 focus:ring-blue-500"
+            />
+            <label htmlFor="corsProxy" className="flex-1 text-sm text-zinc-700 dark:text-zinc-300">
+              <span className="font-medium">Обход CORS блокировки</span>
+              <span className="ml-2 text-xs text-zinc-500 dark:text-zinc-400">
+                (использовать прокси-сервис для обхода ограничений браузера)
+              </span>
+            </label>
+          </div>
+
+          {corsProxyEnabled && (
+            <CorsProxySettings />
           )}
 
           <div>

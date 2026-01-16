@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import Toast from './Toast'
+import CorsProxySettings from './CorsProxySettings'
+import { applyProxy, getCurrentProxy, getCorsProxyEnabled, setCorsProxyEnabled } from '@/lib/cors-proxy'
 
 type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH'
 type AuthType = 'none' | 'bearer' | 'api-key' | 'basic'
@@ -34,8 +36,14 @@ export default function ApiTestForm({ userId }: { userId: string }) {
   const [favoriteName, setFavoriteName] = useState('')
   const [showToast, setShowToast] = useState(false)
   const [toastMessage, setToastMessage] = useState('')
+  const [corsProxyEnabled, setCorsProxyEnabledState] = useState(false)
 
   const supabase = createClient()
+
+  // Загрузка настройки CORS proxy
+  useEffect(() => {
+    setCorsProxyEnabledState(getCorsProxyEnabled())
+  }, [])
 
   // Загрузка шаблона из localStorage
   useEffect(() => {
@@ -132,7 +140,58 @@ export default function ApiTestForm({ userId }: { userId: string }) {
         parsedHeaders['Authorization'] = `Basic ${credentials}`
       }
 
-      // Выполняем запрос
+      // Применяем CORS прокси если включен
+      if (corsProxyEnabled) {
+        const proxyType = getCurrentProxy();
+        
+        if (proxyType === 'local') {
+          // Используем локальный прокси через API
+          const proxyUrl = `/api/proxy?url=${encodeURIComponent(url)}`;
+          const proxyResponse = await fetch(proxyUrl, {
+            method,
+            headers: {
+              'Content-Type': 'application/json',
+              ...parsedHeaders,
+            },
+            body: method !== 'GET' && body ? body : undefined,
+          });
+
+          const proxyResult = await proxyResponse.json();
+          
+          if (!proxyResponse.ok && proxyResult.error) {
+            throw new Error(proxyResult.error);
+          }
+
+          const testResult: TestResult = {
+            status: proxyResult.status,
+            statusText: proxyResult.statusText,
+            responseTime: Math.round(endTime - startTime),
+            data: proxyResult.data,
+            headers: proxyResult.headers,
+          };
+
+          setResult(testResult);
+
+          // Сохраняем результат в базу данных
+          const { error: dbError } = await supabase.from('api_tests').insert({
+            user_id: userId,
+            service_name: serviceName,
+            api_endpoint: url,
+            test_status: proxyResult.status >= 200 && proxyResult.status < 300 ? 'success' : 'failed',
+            response_time: Math.round(endTime - startTime),
+            response_body: JSON.stringify(proxyResult.data),
+            response_status: proxyResult.status,
+          });
+
+          if (dbError) {
+            console.error('Ошибка сохранения в БД:', dbError);
+          }
+
+          return;
+        }
+      }
+
+      // Обычный запрос без прокси
       const startTime = performance.now()
       const response = await fetch(url, {
         method,
@@ -341,6 +400,30 @@ export default function ApiTestForm({ userId }: { userId: string }) {
                 />
               </div>
             </>
+          )}
+
+          <div className="flex items-center gap-2 rounded-md border border-zinc-300 bg-zinc-50 p-3 dark:border-zinc-600 dark:bg-zinc-700">
+            <input
+              type="checkbox"
+              id="corsProxy"
+              checked={corsProxyEnabled}
+              onChange={(e) => {
+                const enabled = e.target.checked
+                setCorsProxyEnabledState(enabled)
+                setCorsProxyEnabled(enabled)
+              }}
+              className="h-4 w-4 rounded border-zinc-300 text-blue-600 focus:ring-2 focus:ring-blue-500"
+            />
+            <label htmlFor="corsProxy" className="flex-1 text-sm text-zinc-700 dark:text-zinc-300">
+              <span className="font-medium">Обход CORS блокировки</span>
+              <span className="ml-2 text-xs text-zinc-500 dark:text-zinc-400">
+                (использовать прокси-сервис для обхода ограничений браузера)
+              </span>
+            </label>
+          </div>
+
+          {corsProxyEnabled && (
+            <CorsProxySettings />
           )}
 
           <div>
