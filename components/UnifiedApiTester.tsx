@@ -11,6 +11,8 @@ import {
   Loader2, Brain, Play, CheckCircle, XCircle, Clock, 
   Settings, Eye, EyeOff, Zap
 } from 'lucide-react';
+import CorsProxySettings from './CorsProxySettings';
+import { applyProxy, getCurrentProxy, getCorsProxyEnabled, setCorsProxyEnabled } from '@/lib/cors-proxy';
 
 type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
 type AuthType = 'none' | 'bearer' | 'api-key' | 'basic';
@@ -72,6 +74,7 @@ export function UnifiedApiTester({ userId }: UnifiedApiTesterProps) {
   });
   const [manualResult, setManualResult] = useState<any>(null);
   const [manualLoading, setManualLoading] = useState(false);
+  const [corsProxyEnabled, setCorsProxyEnabledState] = useState(getCorsProxyEnabled());
 
   // AI Generation Functions
   const generateExecutableTests = async () => {
@@ -161,7 +164,38 @@ export function UnifiedApiTester({ userId }: UnifiedApiTesterProps) {
         requestOptions.body = test.body;
       }
 
-      const response = await fetch(test.url, requestOptions);
+      // Применяем CORS прокси если включен
+      let response;
+      if (corsProxyEnabled) {
+        const proxyType = getCurrentProxy();
+        
+        if (proxyType === 'local') {
+          // Используем локальный прокси
+          const proxyUrl = `/api/proxy?url=${encodeURIComponent(test.url)}`;
+          const proxyResponse = await fetch(proxyUrl, requestOptions);
+          const proxyResult = await proxyResponse.json();
+          
+          if (!proxyResponse.ok && proxyResult.error) {
+            throw new Error(proxyResult.error);
+          }
+
+          const duration = Date.now() - startTime;
+          
+          const result: TestResult = {
+            id: test.id,
+            status: proxyResult.status === test.expected_status ? 'success' : 'error',
+            response: proxyResult.data,
+            duration,
+            actualStatus: proxyResult.status
+          };
+
+          setResults(prev => ({ ...prev, [test.id]: result }));
+          return;
+        }
+      }
+
+      // Обычный запрос без прокси
+      response = await fetch(test.url, requestOptions);
       const duration = Date.now() - startTime;
       
       let responseData;
@@ -245,6 +279,57 @@ export function UnifiedApiTester({ userId }: UnifiedApiTesterProps) {
       }
 
       const startTime = Date.now();
+      
+      // Применяем CORS прокси если включен
+      if (corsProxyEnabled) {
+        const proxyType = getCurrentProxy();
+        
+        if (proxyType === 'local') {
+          // Используем локальный прокси
+          const proxyUrl = `/api/proxy?url=${encodeURIComponent(manualTest.url)}`;
+          const proxyResponse = await fetch(proxyUrl, {
+            method: manualTest.method,
+            headers: parsedHeaders,
+            body: manualTest.method !== 'GET' && manualTest.body ? manualTest.body : undefined,
+          });
+
+          const proxyResult = await proxyResponse.json();
+          
+          if (!proxyResponse.ok && proxyResult.error) {
+            throw new Error(proxyResult.error);
+          }
+
+          const responseTime = Date.now() - startTime;
+
+          const result = {
+            status: proxyResult.status,
+            statusText: proxyResult.statusText,
+            responseTime,
+            data: proxyResult.data,
+            headers: proxyResult.headers
+          };
+
+          setManualResult(result);
+
+          // Сохраняем в историю
+          const historyItem = {
+            id: Date.now().toString(),
+            serviceName: manualTest.serviceName,
+            url: manualTest.url,
+            method: manualTest.method,
+            result,
+            timestamp: new Date().toISOString()
+          };
+
+          const history = JSON.parse(localStorage.getItem('testHistory') || '[]');
+          history.unshift(historyItem);
+          localStorage.setItem('testHistory', JSON.stringify(history.slice(0, 50)));
+          
+          return;
+        }
+      }
+
+      // Обычный запрос без прокси
       const response = await fetch(manualTest.url, {
         method: manualTest.method,
         headers: parsedHeaders,
@@ -422,10 +507,28 @@ export function UnifiedApiTester({ userId }: UnifiedApiTesterProps) {
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium">{generatedTests.length} готовых тестов</span>
-                    <Button onClick={runAllTests} disabled={runningAll} size="sm">
-                      <Play className="h-3 w-3 mr-1" />
-                      {runningAll ? 'Выполняется...' : 'Запустить все'}
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 rounded-md border border-input bg-muted/50 px-3 py-1">
+                        <input
+                          type="checkbox"
+                          id="corsProxyAi"
+                          checked={corsProxyEnabled}
+                          onChange={(e) => {
+                            const enabled = e.target.checked;
+                            setCorsProxyEnabledState(enabled);
+                            setCorsProxyEnabled(enabled);
+                          }}
+                          className="h-3 w-3 rounded border-input"
+                        />
+                        <label htmlFor="corsProxyAi" className="text-xs">
+                          Обход CORS
+                        </label>
+                      </div>
+                      <Button onClick={runAllTests} disabled={runningAll} size="sm">
+                        <Play className="h-3 w-3 mr-1" />
+                        {runningAll ? 'Выполняется...' : 'Запустить все'}
+                      </Button>
+                    </div>
                   </div>
 
                   <div className="space-y-2">
@@ -636,6 +739,30 @@ export function UnifiedApiTester({ userId }: UnifiedApiTesterProps) {
                     </>
                   )}
                 </div>
+
+                <div className="flex items-center gap-2 rounded-md border border-input bg-muted/50 p-3">
+                  <input
+                    type="checkbox"
+                    id="corsProxyManual"
+                    checked={corsProxyEnabled}
+                    onChange={(e) => {
+                      const enabled = e.target.checked;
+                      setCorsProxyEnabledState(enabled);
+                      setCorsProxyEnabled(enabled);
+                    }}
+                    className="h-4 w-4 rounded border-input"
+                  />
+                  <label htmlFor="corsProxyManual" className="flex-1 text-sm">
+                    <span className="font-medium">Обход CORS блокировки</span>
+                    <span className="ml-2 text-xs text-muted-foreground">
+                      (использовать прокси-сервис)
+                    </span>
+                  </label>
+                </div>
+
+                {corsProxyEnabled && (
+                  <CorsProxySettings />
+                )}
 
                 <Button 
                   onClick={runManualTest} 
