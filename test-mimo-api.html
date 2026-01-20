@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тест Xiaomi Mimo API</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px 0;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .result {
+            margin-top: 10px;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .info {
+            background: #e7f3ff;
+            color: #004085;
+            border: 1px solid #b3d7ff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Тест Xiaomi Mimo API</h1>
+        
+        <div>
+            <h3>Прямой тест API</h3>
+            <p>Этот тест отправляет запрос напрямую к Xiaomi Mimo API через наш сервер.</p>
+            <button onclick="testDirectApi()">Тестировать прямой API</button>
+            <div id="directResult" class="result" style="display: none;"></div>
+        </div>
+
+        <div>
+            <h3>Тест через наш endpoint</h3>
+            <p>Этот тест использует наш /api/ai/analyze-response endpoint.</p>
+            <button onclick="testOurEndpoint()">Тестировать наш endpoint</button>
+            <div id="endpointResult" class="result" style="display: none;"></div>
+        </div>
+    </div>
+
+    <script>
+        async function testDirectApi() {
+            const resultDiv = document.getElementById('directResult');
+            const button = event.target;
+            
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'result info';
+            resultDiv.textContent = '⏳ Тестирую прямой API...';
+            button.disabled = true;
+
+            try {
+                const response = await fetch('/api/test-mimo-direct', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        message: 'Привет! Это тест API.'
+                    })
+                });
+
+                const result = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.className = 'result success';
+                    resultDiv.textContent = `✅ Прямой API работает!\n\nОтвет: ${result.response}`;
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.textContent = `❌ Ошибка прямого API:\n${JSON.stringify(result, null, 2)}`;
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `❌ Ошибка запроса: ${error.message}`;
+            } finally {
+                button.disabled = false;
+            }
+        }
+
+        async function testOurEndpoint() {
+            const resultDiv = document.getElementById('endpointResult');
+            const button = event.target;
+            
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'result info';
+            resultDiv.textContent = '⏳ Тестирую наш endpoint...';
+            button.disabled = true;
+
+            try {
+                const response = await fetch('/api/ai/analyze-response', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        actualResponse: { test: 'data', status: 'ok' },
+                        testName: 'Тестовый запрос',
+                        apiUrl: 'https://api.test.com/test',
+                        httpMethod: 'GET',
+                        httpStatus: 200
+                    })
+                });
+
+                const result = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.className = 'result success';
+                    resultDiv.textContent = `✅ Наш endpoint работает!\n\nАнализ: ${result.analysis}\n\nFallback: ${result.fallback || 'false'}\nОшибка: ${result.error || 'нет'}`;
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.textContent = `❌ Ошибка нашего endpoint:\n${JSON.stringify(result, null, 2)}`;
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `❌ Ошибка запроса: ${error.message}`;
+            } finally {
+                button.disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>

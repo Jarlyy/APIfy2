@@ -156,7 +156,12 @@
                             headers: { 'Content-Type': 'application/json' }
                         });
                         
-                        const proxyResult = await response.json();
+                        let proxyResult;
+                        try {
+                            proxyResult = await response.json();
+                        } catch (parseError) {
+                            throw new Error(`Ошибка парсинга ответа прокси: ${parseError}`);
+                        }
                         
                         if (!response.ok && proxyResult.error) {
                             throw new Error(proxyResult.error);
