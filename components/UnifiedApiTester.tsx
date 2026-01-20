@@ -12,7 +12,9 @@ import {
   Settings, Eye, EyeOff, Zap
 } from 'lucide-react';
 import CorsProxySettings from './CorsProxySettings';
+import AiAnalysis from './AiAnalysis';
 import { applyProxy, getCurrentProxy, getCorsProxyEnabled, setCorsProxyEnabled } from '@/lib/cors-proxy';
+import { isAiAnalysisEnabled, setAiAnalysisEnabled } from '@/lib/ai-analysis';
 
 type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
 type AuthType = 'none' | 'bearer' | 'api-key' | 'basic';
@@ -75,6 +77,7 @@ export function UnifiedApiTester({ userId }: UnifiedApiTesterProps) {
   const [manualResult, setManualResult] = useState<any>(null);
   const [manualLoading, setManualLoading] = useState(false);
   const [corsProxyEnabled, setCorsProxyEnabledState] = useState(getCorsProxyEnabled());
+  const [aiAnalysisEnabled, setAiAnalysisEnabledState] = useState(isAiAnalysisEnabled());
 
   // AI Generation Functions
   const generateExecutableTests = async () => {
@@ -173,7 +176,13 @@ export function UnifiedApiTester({ userId }: UnifiedApiTesterProps) {
           // Используем локальный прокси
           const proxyUrl = `/api/proxy?url=${encodeURIComponent(test.url)}`;
           const proxyResponse = await fetch(proxyUrl, requestOptions);
-          const proxyResult = await proxyResponse.json();
+          
+          let proxyResult;
+          try {
+            proxyResult = await proxyResponse.json();
+          } catch (parseError) {
+            throw new Error(`Ошибка парсинга ответа прокси: ${parseError}`);
+          }
           
           if (!proxyResponse.ok && proxyResult.error) {
             throw new Error(proxyResult.error);
@@ -293,7 +302,12 @@ export function UnifiedApiTester({ userId }: UnifiedApiTesterProps) {
             body: manualTest.method !== 'GET' && manualTest.body ? manualTest.body : undefined,
           });
 
-          const proxyResult = await proxyResponse.json();
+          let proxyResult;
+          try {
+            proxyResult = await proxyResponse.json();
+          } catch (parseError) {
+            throw new Error(`Ошибка парсинга ответа прокси: ${parseError}`);
+          }
           
           if (!proxyResponse.ok && proxyResult.error) {
             throw new Error(proxyResult.error);
@@ -493,6 +507,52 @@ export function UnifiedApiTester({ userId }: UnifiedApiTesterProps) {
                     ИИ создаст готовые к запуску тесты для основных функций API
                   </p>
                 </div>
+
+                <div className="flex items-center gap-2 rounded-md border border-input bg-muted/50 p-3">
+                  <input
+                    type="checkbox"
+                    id="aiAnalysisUnified"
+                    checked={aiAnalysisEnabled}
+                    onChange={(e) => {
+                      const enabled = e.target.checked;
+                      setAiAnalysisEnabledState(enabled);
+                      setAiAnalysisEnabled(enabled);
+                    }}
+                    className="h-4 w-4 rounded border-input"
+                  />
+                  <label htmlFor="aiAnalysisUnified" className="flex-1 text-sm">
+                    <span className="font-medium">AI анализ ответов</span>
+                    <span className="ml-2 text-xs text-muted-foreground">
+                      (автоматически анализировать ответы)
+                    </span>
+                  </label>
+                </div>
+
+                <div className="flex items-center gap-2 rounded-md border border-input bg-muted/50 p-3">
+                  <input
+                    type="checkbox"
+                    id="corsProxyUnified"
+                    checked={corsProxyEnabled}
+                    onChange={(e) => {
+                      const enabled = e.target.checked;
+                      setCorsProxyEnabledState(enabled);
+                      setCorsProxyEnabled(enabled);
+                    }}
+                    className="h-4 w-4 rounded border-input"
+                  />
+                  <label htmlFor="corsProxyUnified" className="flex-1 text-sm">
+                    <span className="font-medium">Обход CORS блокировки</span>
+                    <span className="ml-2 text-xs text-muted-foreground">
+                      (использовать прокси-сервис)
+                    </span>
+                  </label>
+                </div>
+
+                {corsProxyEnabled && (
+                  <div className="ml-4">
+                    <CorsProxySettings />
+                  </div>
+                )}
               </div>
 
               {/* Generated Tests Section */}
@@ -615,6 +675,18 @@ export function UnifiedApiTester({ userId }: UnifiedApiTesterProps) {
                                       }
                                     </pre>
                                   </div>
+                                )}
+
+                                {/* AI Анализ для AI тестов */}
+                                {result.response && (
+                                  <AiAnalysis
+                                    actualResponse={result.response}
+                                    expectedResponse={test.expected_status ? { expectedStatus: test.expected_status } : undefined}
+                                    testName={test.name}
+                                    apiUrl={test.url}
+                                    httpMethod={test.method}
+                                    httpStatus={result.actualStatus}
+                                  />
                                 )}
                               </div>
                             )}
@@ -743,6 +815,26 @@ export function UnifiedApiTester({ userId }: UnifiedApiTesterProps) {
                 <div className="flex items-center gap-2 rounded-md border border-input bg-muted/50 p-3">
                   <input
                     type="checkbox"
+                    id="aiAnalysisManual"
+                    checked={aiAnalysisEnabled}
+                    onChange={(e) => {
+                      const enabled = e.target.checked;
+                      setAiAnalysisEnabledState(enabled);
+                      setAiAnalysisEnabled(enabled);
+                    }}
+                    className="h-4 w-4 rounded border-input"
+                  />
+                  <label htmlFor="aiAnalysisManual" className="flex-1 text-sm">
+                    <span className="font-medium">AI анализ ответов</span>
+                    <span className="ml-2 text-xs text-muted-foreground">
+                      (автоматически анализировать ответы)
+                    </span>
+                  </label>
+                </div>
+
+                <div className="flex items-center gap-2 rounded-md border border-input bg-muted/50 p-3">
+                  <input
+                    type="checkbox"
                     id="corsProxyManual"
                     checked={corsProxyEnabled}
                     onChange={(e) => {
@@ -808,6 +900,17 @@ export function UnifiedApiTester({ userId }: UnifiedApiTesterProps) {
                       </div>
                     </CardContent>
                   </Card>
+                )}
+
+                {/* AI Анализ для ручного теста */}
+                {manualResult && (
+                  <AiAnalysis
+                    actualResponse={manualResult.data}
+                    testName={manualTest.serviceName}
+                    apiUrl={manualTest.url}
+                    httpMethod={manualTest.method}
+                    httpStatus={manualResult.status}
+                  />
                 )}
               </div>
             </TabsContent>

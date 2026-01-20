@@ -3,7 +3,9 @@
 import { useState, useEffect } from 'react'
 import Toast from './Toast'
 import CorsProxySettings from './CorsProxySettings'
+import AiAnalysis from './AiAnalysis'
 import { applyProxy, getCurrentProxy, getCorsProxyEnabled, setCorsProxyEnabled } from '@/lib/cors-proxy'
+import { isAiAnalysisEnabled, setAiAnalysisEnabled } from '@/lib/ai-analysis'
 
 type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH'
 type AuthType = 'none' | 'bearer' | 'api-key' | 'basic'
@@ -60,10 +62,16 @@ export default function ApiTestFormLocal({ userId, generatedTests = [], onTestsU
   const [showToast, setShowToast] = useState(false)
   const [toastMessage, setToastMessage] = useState('')
   const [corsProxyEnabled, setCorsProxyEnabledState] = useState(false)
+  const [aiAnalysisEnabled, setAiAnalysisEnabledState] = useState(false)
 
   // Загрузка настройки CORS proxy
   useEffect(() => {
     setCorsProxyEnabledState(getCorsProxyEnabled())
+  }, [])
+
+  // Загрузка настройки AI анализа
+  useEffect(() => {
+    setAiAnalysisEnabledState(isAiAnalysisEnabled())
   }, [])
 
   // Загрузка шаблона из localStorage
@@ -219,7 +227,12 @@ export default function ApiTestFormLocal({ userId, generatedTests = [], onTestsU
             body: requestBody,
           });
 
-          const proxyResult = await proxyResponse.json();
+          let proxyResult;
+          try {
+            proxyResult = await proxyResponse.json();
+          } catch (parseError) {
+            throw new Error(`Ошибка парсинга ответа прокси: ${parseError}`);
+          }
           
           if (!proxyResponse.ok && proxyResult.error) {
             throw new Error(proxyResult.error);
@@ -475,7 +488,27 @@ export default function ApiTestFormLocal({ userId, generatedTests = [], onTestsU
           <div className="flex items-center gap-2 rounded-md border border-zinc-300 bg-zinc-50 p-3 dark:border-zinc-600 dark:bg-zinc-700">
             <input
               type="checkbox"
-              id="corsProxy"
+              id="aiAnalysisLocal"
+              checked={aiAnalysisEnabled}
+              onChange={(e) => {
+                const enabled = e.target.checked
+                setAiAnalysisEnabledState(enabled)
+                setAiAnalysisEnabled(enabled)
+              }}
+              className="h-4 w-4 rounded border-zinc-300 text-blue-600 focus:ring-2 focus:ring-blue-500"
+            />
+            <label htmlFor="aiAnalysisLocal" className="flex-1 text-sm text-zinc-700 dark:text-zinc-300">
+              <span className="font-medium">AI анализ ответов</span>
+              <span className="ml-2 text-xs text-zinc-500 dark:text-zinc-400">
+                (автоматически анализировать ответы API с помощью ИИ)
+              </span>
+            </label>
+          </div>
+
+          <div className="flex items-center gap-2 rounded-md border border-zinc-300 bg-zinc-50 p-3 dark:border-zinc-600 dark:bg-zinc-700">
+            <input
+              type="checkbox"
+              id="corsProxyLocal"
               checked={corsProxyEnabled}
               onChange={(e) => {
                 const enabled = e.target.checked
@@ -484,7 +517,7 @@ export default function ApiTestFormLocal({ userId, generatedTests = [], onTestsU
               }}
               className="h-4 w-4 rounded border-zinc-300 text-blue-600 focus:ring-2 focus:ring-blue-500"
             />
-            <label htmlFor="corsProxy" className="flex-1 text-sm text-zinc-700 dark:text-zinc-300">
+            <label htmlFor="corsProxyLocal" className="flex-1 text-sm text-zinc-700 dark:text-zinc-300">
               <span className="font-medium">Обход CORS блокировки</span>
               <span className="ml-2 text-xs text-zinc-500 dark:text-zinc-400">
                 (использовать прокси-сервис для обхода ограничений браузера)
@@ -613,6 +646,15 @@ export default function ApiTestFormLocal({ userId, generatedTests = [], onTestsU
                 }
               </pre>
             </div>
+
+            {/* AI Анализ ответа */}
+            <AiAnalysis
+              actualResponse={result.data}
+              testName={serviceName}
+              apiUrl={url}
+              httpMethod={method}
+              httpStatus={result.status}
+            />
           </div>
         </div>
       )}

@@ -46,14 +46,18 @@ async function handleProxyRequest(request: NextRequest, method: string) {
     // Получаем заголовки из запроса
     const headers: Record<string, string> = {};
     request.headers.forEach((value, key) => {
-      // Пропускаем служебные заголовки
+      // Пропускаем служебные заголовки и заголовки сжатия
       if (!key.startsWith('x-') && 
           key !== 'host' && 
           key !== 'connection' && 
-          key !== 'content-length') {
+          key !== 'content-length' &&
+          key !== 'accept-encoding') { // Убираем accept-encoding чтобы избежать сжатия
         headers[key] = value;
       }
     });
+
+    // Принудительно отключаем сжатие
+    headers['accept-encoding'] = 'identity';
 
     // Получаем тело запроса если есть
     let body: string | undefined;
@@ -76,10 +80,24 @@ async function handleProxyRequest(request: NextRequest, method: string) {
     const contentType = response.headers.get('content-type');
     let data;
     
-    if (contentType?.includes('application/json')) {
-      data = await response.json();
-    } else {
-      data = await response.text();
+    try {
+      if (contentType?.includes('application/json')) {
+        // Пытаемся парсить как JSON
+        const text = await response.text();
+        try {
+          data = JSON.parse(text);
+        } catch (jsonError) {
+          // Если не удалось парсить JSON, возвращаем как текст
+          console.warn('Failed to parse JSON, returning as text:', jsonError);
+          data = text;
+        }
+      } else {
+        // Для не-JSON контента возвращаем как текст
+        data = await response.text();
+      }
+    } catch (readError) {
+      console.error('Error reading response:', readError);
+      data = `Error reading response: ${readError}`;
     }
 
     // Возвращаем ответ с CORS заголовками
