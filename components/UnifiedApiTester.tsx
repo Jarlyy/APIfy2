@@ -567,28 +567,10 @@ export function UnifiedApiTester({ userId }: UnifiedApiTesterProps) {
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium">{generatedTests.length} готовых тестов</span>
-                    <div className="flex items-center gap-2">
-                      <div className="flex items-center gap-2 rounded-md border border-input bg-muted/50 px-3 py-1">
-                        <input
-                          type="checkbox"
-                          id="corsProxyAi"
-                          checked={corsProxyEnabled}
-                          onChange={(e) => {
-                            const enabled = e.target.checked;
-                            setCorsProxyEnabledState(enabled);
-                            setCorsProxyEnabled(enabled);
-                          }}
-                          className="h-3 w-3 rounded border-input"
-                        />
-                        <label htmlFor="corsProxyAi" className="text-xs">
-                          Обход CORS
-                        </label>
-                      </div>
-                      <Button onClick={runAllTests} disabled={runningAll} size="sm">
-                        <Play className="h-3 w-3 mr-1" />
-                        {runningAll ? 'Выполняется...' : 'Запустить все'}
-                      </Button>
-                    </div>
+                    <Button onClick={runAllTests} disabled={runningAll} size="sm">
+                      <Play className="h-3 w-3 mr-1" />
+                      {runningAll ? 'Выполняется...' : 'Запустить все'}
+                    </Button>
                   </div>
 
                   <div className="space-y-2">
