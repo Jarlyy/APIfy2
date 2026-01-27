@@ -1,4 +1,4 @@
-// Утилиты для AI анализа ответов API
+// Утилиты для AI анализа ответов API с использованием Google Gemini
 
 export interface AnalysisRequest {
   actualResponse: any;
@@ -15,7 +15,7 @@ export interface AnalysisResult {
   fallback?: boolean;
 }
 
-// Анализ ответа API через AI
+// Анализ ответа API через Google Gemini AI
 export async function analyzeApiResponse(request: AnalysisRequest): Promise<AnalysisResult> {
   try {
     const response = await fetch('/api/ai/analyze-response', {
@@ -38,8 +38,48 @@ export async function analyzeApiResponse(request: AnalysisRequest): Promise<Anal
     // Fallback анализ
     return {
       analysis: generateSimpleAnalysis(request),
-      error: 'Не удалось получить AI анализ, используется упрощенный анализ'
+      error: 'Не удалось получить AI анализ, используется упрощенный анализ',
+      fallback: true
     };
+  }
+}
+
+// Тестирование Google Gemini API
+export async function testGeminiApi(prompt?: string): Promise<{
+  success: boolean;
+  response?: string;
+  error?: string;
+  details?: string;
+}> {
+  try {
+    const response = await fetch('/api/test-gemini-direct', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ prompt })
+    })
+
+    const data = await response.json()
+    
+    if (!response.ok) {
+      return {
+        success: false,
+        error: data.error || 'Неизвестная ошибка',
+        details: data.details
+      }
+    }
+
+    return {
+      success: true,
+      response: data.response
+    }
+  } catch (error) {
+    return {
+      success: false,
+      error: 'Ошибка сети',
+      details: error instanceof Error ? error.message : 'Неизвестная ошибка'
+    }
   }
 }
 
@@ -56,6 +96,11 @@ function generateSimpleAnalysis(request: AnalysisRequest): string {
     } else if (httpStatus >= 400) {
       analysis += '❌ Ошибка в запросе. ';
     }
+  }
+
+  // Анализ метода
+  if (httpMethod) {
+    analysis += `🔧 ${httpMethod} запрос. `;
   }
 
   // Анализ содержимого

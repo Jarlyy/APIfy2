@@ -24,8 +24,6 @@ export default function HistoryPage() {
   const [history, setHistory] = useState<TestHistory[]>([])
   const [loading, setLoading] = useState(true)
 
-  const mockUser = undefined; // Убираем мок пользователя для показа кнопки "Войти"
-
   useEffect(() => {
     const loadHistory = () => {
       try {
@@ -61,7 +59,7 @@ export default function HistoryPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-zinc-50 dark:bg-zinc-900">
-        <Header user={mockUser} />
+        <Header />
         <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
           <div className="text-center">
             <p className="text-zinc-600 dark:text-zinc-400">Загрузка истории...</p>
@@ -73,7 +71,7 @@ export default function HistoryPage() {
 
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-900">
-      <Header user={mockUser} />
+      <Header />
       
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <div className="mb-8 flex items-center justify-between">

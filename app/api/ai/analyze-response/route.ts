@@ -28,8 +28,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Проверяем наличие API ключа
-    if (!process.env.MIMO_API_KEY) {
-      console.error('MIMO_API_KEY not found in environment variables');
+    if (!process.env.GEMINI_API_KEY) {
+      console.error('GEMINI_API_KEY not found in environment variables');
       const fallbackAnalysis = generateFallbackAnalysis(actualResponse, expectedResponse, httpStatus);
       return NextResponse.json({ 
         analysis: fallbackAnalysis,
@@ -60,50 +60,44 @@ ${typeof expectedResponse === 'string' ? expectedResponse : JSON.stringify(expec
 
 Ответь кратко и по делу, используй эмодзи для наглядности.`;
 
-    console.log('Sending request to Xiaomi Mimo API...');
-    console.log('API Key present:', !!process.env.MIMO_API_KEY);
-    console.log('API URL:', process.env.MIMO_API_URL || 'https://api.xiaomimimo.com/v1/chat/completions');
+    console.log('Sending request to Google Gemini API...');
+    console.log('API Key present:', !!process.env.GEMINI_API_KEY);
+    console.log('API URL:', process.env.GEMINI_API_URL);
 
-    // Отправляем запрос к Xiaomi Mimo API
-    const mimoApiUrl = process.env.MIMO_API_URL || 'https://api.xiaomimimo.com/v1/chat/completions';
+    // Отправляем запрос к Google Gemini API
+    const geminiApiUrl = process.env.GEMINI_API_URL;
+    const geminiApiKey = process.env.GEMINI_API_KEY;
+    
     const requestPayload = {
-      model: 'mimo-v2-flash', // Правильная модель для Xiaomi Mimo
-      messages: [
-        {
-          role: 'system',
-          content: 'Ты эксперт по API тестированию. Анализируй ответы API и давай краткие, полезные комментарии на русском языке. Будь конкретным и используй эмодзи.'
-        },
-        {
-          role: 'user',
-          content: prompt
-        }
-      ],
-      max_completion_tokens: 300, // Правильный параметр для Xiaomi Mimo
-      temperature: 0.3,
-      top_p: 0.95,
-      stream: false,
-      frequency_penalty: 0,
-      presence_penalty: 0
+      contents: [{
+        parts: [{
+          text: prompt
+        }]
+      }],
+      generationConfig: {
+        temperature: 0.3,
+        topP: 0.95,
+        maxOutputTokens: 300
+      }
     };
 
     console.log('Request payload:', JSON.stringify(requestPayload, null, 2));
 
-    const mimoResponse = await fetch(mimoApiUrl, {
+    const geminiResponse = await fetch(`${geminiApiUrl}?key=${geminiApiKey}`, {
       method: 'POST',
       headers: {
-        'api-key': process.env.MIMO_API_KEY, // Правильный заголовок для Xiaomi Mimo
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(requestPayload),
     });
 
-    console.log('Xiaomi Mimo API response status:', mimoResponse.status);
-    console.log('Xiaomi Mimo API response headers:', Object.fromEntries(mimoResponse.headers.entries()));
+    console.log('Google Gemini API response status:', geminiResponse.status);
+    console.log('Google Gemini API response headers:', Object.fromEntries(geminiResponse.headers.entries()));
 
-    if (!mimoResponse.ok) {
+    if (!geminiResponse.ok) {
       let errorData;
       try {
-        const errorText = await mimoResponse.text();
+        const errorText = await geminiResponse.text();
         console.log('Error response text:', errorText);
         try {
           errorData = JSON.parse(errorText);
@@ -113,19 +107,19 @@ ${typeof expectedResponse === 'string' ? expectedResponse : JSON.stringify(expec
       } catch {
         errorData = { error: 'Failed to read error response' };
       }
-      console.error('Xiaomi Mimo API error:', errorData);
+      console.error('Google Gemini API error:', errorData);
       
       // Fallback анализ без AI
       const fallbackAnalysis = generateFallbackAnalysis(actualResponse, expectedResponse, httpStatus);
       return NextResponse.json({ 
         analysis: fallbackAnalysis,
         fallback: true,
-        error: `AI API ошибка: ${mimoResponse.status} ${mimoResponse.statusText} - ${JSON.stringify(errorData)}`
+        error: `AI API ошибка: ${geminiResponse.status} ${geminiResponse.statusText} - ${JSON.stringify(errorData)}`
       });
     }
 
-    const responseText = await mimoResponse.text();
-    console.log('Xiaomi Mimo API response text:', responseText);
+    const responseText = await geminiResponse.text();
+    console.log('Google Gemini API response text:', responseText);
     
     let data;
     try {
@@ -140,9 +134,9 @@ ${typeof expectedResponse === 'string' ? expectedResponse : JSON.stringify(expec
       });
     }
 
-    console.log('Xiaomi Mimo API response data:', data);
+    console.log('Google Gemini API response data:', data);
 
-    const analysis = data.choices?.[0]?.message?.content || 'Не удалось проанализировать ответ';
+    const analysis = data.candidates?.[0]?.content?.parts?.[0]?.text || 'Не удалось проанализировать ответ';
 
     console.log('AI Analysis result:', analysis);
 
