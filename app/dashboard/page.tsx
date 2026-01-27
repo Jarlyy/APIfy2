@@ -2,12 +2,9 @@ import Header from '@/components/Header'
 import ApiTestingWorkspace from '@/components/ApiTestingWorkspace'
 
 export default async function DashboardPage() {
-  // В гостевом режиме не передаем пользователя
-  const mockUser = undefined; // Убираем мок пользователя для показа кнопки "Войти"
-
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-900">
-      <Header user={mockUser} />
+      <Header />
       
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <div className="mb-8">

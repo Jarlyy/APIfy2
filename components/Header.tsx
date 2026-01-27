@@ -1,13 +1,17 @@
 'use client'
 
 import Link from 'next/link'
+import { useAuth } from '@/hooks/useAuth'
+import { createClient } from '@/lib/supabase/client'
 
-interface MockUser {
-  id: string;
-  email: string;
-}
+export default function Header() {
+  const { user, loading } = useAuth()
 
-export default function Header({ user }: { user?: MockUser }) {
+  const handleSignOut = async () => {
+    const supabase = createClient()
+    await supabase.auth.signOut()
+    window.location.href = '/login'
+  }
   return (
     <header className="border-b border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-800">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -51,12 +55,19 @@ export default function Header({ user }: { user?: MockUser }) {
           </div>
 
           <div className="flex items-center gap-4">
-            {user ? (
+            {loading ? (
+              <div className="text-sm text-zinc-500 dark:text-zinc-400">
+                Загрузка...
+              </div>
+            ) : user ? (
               <div className="flex items-center gap-2">
                 <span className="text-sm text-zinc-700 dark:text-zinc-300">
                   {user.email}
                 </span>
-                <button className="text-sm text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200">
+                <button 
+                  onClick={handleSignOut}
+                  className="text-sm text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200"
+                >
                   Выйти
                 </button>
               </div>

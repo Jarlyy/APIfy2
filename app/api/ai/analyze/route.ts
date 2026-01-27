@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { MimoAPI } from '@/lib/mimo-api';
+import { GeminiAPI } from '@/lib/gemini-api';
 
 export async function POST(request: NextRequest) {
   console.log('AI API вызван');
@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const mimo = new MimoAPI();
+    const gemini = new GeminiAPI();
     let result: string;
 
     switch (action) {
@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
             { status: 400 }
           );
         }
-        result = await mimo.analyzeAPI(data.serviceName);
+        result = await gemini.analyzeAPI(data.serviceName);
         break;
 
       case 'generateTests':
@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
             { status: 400 }
           );
         }
-        result = await mimo.generateReadyTests(data.serviceName);
+        result = await gemini.generateReadyTests(data.serviceName);
         break;
 
       case 'generateExecutableTests':
@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
             { status: 400 }
           );
         }
-        result = await mimo.generateExecutableTests(data.serviceName);
+        result = await gemini.generateExecutableTests(data.serviceName);
         break;
 
       case 'generateScenarios':
@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
             { status: 400 }
           );
         }
-        result = await mimo.generateTestScenarios(data.apiDoc);
+        result = await gemini.generateTestScenarios(data.apiDoc);
         break;
 
       case 'extractExamples':
@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
             { status: 400 }
           );
         }
-        result = await mimo.extractExamples(data.apiDoc);
+        result = await gemini.extractExamples(data.apiDoc);
         break;
 
       case 'validateTestResult':
@@ -78,7 +78,7 @@ export async function POST(request: NextRequest) {
             { status: 400 }
           );
         }
-        result = await mimo.validateTestResult(data.test, data.result);
+        result = await gemini.validateTestResult(data.test, data.result);
         break;
 
       default:
