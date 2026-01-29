@@ -89,9 +89,26 @@ export class GeminiAPI {
         const errorText = await response.text();
         console.error('Ошибка Gemini API:', errorText);
         
-        // Если превышен лимит запросов, возвращаем демо-ответ
+        let errorData;
+        try {
+          errorData = JSON.parse(errorText);
+        } catch (e) {
+          errorData = { error: { message: errorText } };
+        }
+        
+        // Проверяем специфичные ошибки
         if (response.status === 429) {
           console.log('Лимит запросов превышен, возвращаю демо-ответ');
+          return this.getDemoResponse(prompt);
+        }
+        
+        if (response.status === 400 && errorData.error?.message?.includes('User location is not supported')) {
+          console.log('Регион не поддерживается, возвращаю демо-ответ');
+          return this.getDemoResponse(prompt);
+        }
+        
+        if (response.status === 404 && errorData.error?.message?.includes('not found')) {
+          console.log('Модель не найдена, возвращаю демо-ответ');
           return this.getDemoResponse(prompt);
         }
         
@@ -121,7 +138,8 @@ export class GeminiAPI {
     const isTestGeneration = prompt.includes('готовых тестов') || prompt.includes('формате JSON');
     
     if (isExecutableTests) {
-      return JSON.stringify([
+      // Более разнообразные демо-тесты
+      const demoTests = [
         {
           "id": "demo-1",
           "name": "Получение списка пользователей",
@@ -145,8 +163,55 @@ export class GeminiAPI {
           "auth_token": "",
           "expected_status": 200,
           "expected_response": "Объект пользователя"
+        },
+        {
+          "id": "demo-3",
+          "name": "Создание нового поста",
+          "url": "https://jsonplaceholder.typicode.com/posts",
+          "method": "POST",
+          "headers": {"Content-Type": "application/json"},
+          "body": JSON.stringify({
+            "title": "Тестовый пост",
+            "body": "Содержимое поста",
+            "userId": 1
+          }),
+          "auth_type": "none",
+          "auth_token": "",
+          "expected_status": 201,
+          "expected_response": "Созданный пост с ID"
+        },
+        {
+          "id": "demo-4",
+          "name": "Обновление поста",
+          "url": "https://jsonplaceholder.typicode.com/posts/1",
+          "method": "PUT",
+          "headers": {"Content-Type": "application/json"},
+          "body": JSON.stringify({
+            "id": 1,
+            "title": "Обновленный пост",
+            "body": "Новое содержимое",
+            "userId": 1
+          }),
+          "auth_type": "none",
+          "auth_token": "",
+          "expected_status": 200,
+          "expected_response": "Обновленный пост"
+        },
+        {
+          "id": "demo-5",
+          "name": "Удаление поста",
+          "url": "https://jsonplaceholder.typicode.com/posts/1",
+          "method": "DELETE",
+          "headers": {},
+          "body": "",
+          "auth_type": "none",
+          "auth_token": "",
+          "expected_status": 200,
+          "expected_response": "Пустой объект"
         }
-      ], null, 2);
+      ];
+      
+      return JSON.stringify(demoTests, null, 2);
     }
     
     if (isTestGeneration) {
@@ -165,12 +230,18 @@ export class GeminiAPI {
     "url": "https://jsonplaceholder.typicode.com/posts",
     "method": "POST",
     "description": "Создает новый пост"
+  },
+  {
+    "name": "Получение комментариев",
+    "url": "https://jsonplaceholder.typicode.com/comments",
+    "method": "GET",
+    "description": "Получает все комментарии"
   }
 ]
 \`\`\``;
     }
     
-    return "Демо-ответ от Gemini API. Реальный API временно недоступен.";
+    return "🤖 Демо-ответ от Gemini API.\n\n⚠️ Google AI Studio API недоступен в вашем регионе или возникла ошибка подключения.\n\nСистема работает в демо-режиме с готовыми тестами для популярных API сервисов.\n\nДля полноценной работы рекомендуется:\n1. Использовать VPN для доступа к поддерживаемым регионам\n2. Проверить актуальность API ключа\n3. Использовать альтернативные AI сервисы (OpenAI, Anthropic)";
   }
 
   // Анализ API сервиса

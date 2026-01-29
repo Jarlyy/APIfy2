@@ -85,6 +85,8 @@ export function UnifiedApiTester({ userId }: UnifiedApiTesterProps) {
 
     setAiLoading(true);
     try {
+      console.log('Отправляю запрос на генерацию тестов...');
+      
       const response = await fetch('/api/ai/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -94,7 +96,17 @@ export function UnifiedApiTester({ userId }: UnifiedApiTesterProps) {
         })
       });
 
+      console.log('Ответ получен:', response.status, response.statusText);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Ошибка ответа:', errorText);
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
       const data = await response.json();
+      console.log('Данные получены:', data);
+      
       if (data.error) {
         throw new Error(data.error);
       }
@@ -112,8 +124,11 @@ export function UnifiedApiTester({ userId }: UnifiedApiTesterProps) {
           }
         }
 
+        console.log('Распарсенные тесты:', testsData);
+
         if (Array.isArray(testsData)) {
           setGeneratedTests(testsData);
+          console.log('Тесты установлены:', testsData.length);
         } else {
           throw new Error('Ответ не является массивом тестов');
         }
@@ -123,7 +138,7 @@ export function UnifiedApiTester({ userId }: UnifiedApiTesterProps) {
       }
     } catch (error) {
       console.error('Ошибка генерации исполняемых тестов:', error);
-      alert('Ошибка при генерации тестов. Попробуйте еще раз.');
+      alert(`Ошибка при генерации тестов: ${error.message}`);
     } finally {
       setAiLoading(false);
     }
