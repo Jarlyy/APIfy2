@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Отладка генерации тестов</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; max-width: 1200px; margin: 0 auto; }
+        button { padding: 12px 24px; margin: 10px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; }
+        button:hover { background: #0056b3; }
+        button:disabled { background: #ccc; cursor: not-allowed; }
+        .result { margin-top: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 5px; white-space: pre-wrap; font-family: monospace; font-size: 12px; max-height: 500px; overflow-y: auto; }
+        .success { background: #d4edda; border-color: #c3e6cb; }
+        .error { background: #f8d7da; border-color: #f5c6cb; }
+        .loading { background: #d1ecf1; border-color: #bee5eb; }
+        .info { background: #e2e3e5; border-color: #d6d8db; margin-bottom: 20px; padding: 15px; border-radius: 5px; }
+        h1 { color: #333; }
+        h2 { color: #666; margin-top: 30px; }
+    </style>
+</head>
+<body>
+    <h1>🔧 Отладка генерации тестов с Gemini</h1>
+    
+    <div class="info">
+        <strong>ℹ️ Информация:</strong><br>
+        Этот тестер поможет найти проблему с генерацией тестов.<br>
+        API Key: AIzaSyCG4ZqZozFNuIO1Kt1o7KhbunDFBH5KhWQ<br>
+        Модель: gemini-1.5-flash-latest
+    </div>
+
+    <h2>🧪 Тесты</h2>
+    <button onclick="testDebugGeneration()" id="debugBtn">🔧 Полная отладка</button>
+    <button onclick="testOriginalEndpoint()" id="originalBtn">📋 Оригинальный endpoint</button>
+    <button onclick="testGeminiDirect()" id="geminiBtn">🤖 Gemini напрямую</button>
+    
+    <div id="result"></div>
+
+    <script>
+        async function testDebugGeneration() {
+            const resultDiv = document.getElementById('result');
+            const btn = document.getElementById('debugBtn');
+            
+            btn.disabled = true;
+            resultDiv.className = 'result loading';
+            resultDiv.textContent = '⏳ Запускаю полную отладку...';
+            
+            try {
+                console.log('=== ОТЛАДКА ГЕНЕРАЦИИ ===');
+                
+                const response = await fetch('/api/test-generation', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({})
+                });
+                
+                console.log('Статус ответа:', response.status);
+                
+                const data = await response.json();
+                console.log('Данные ответа:', data);
+                
+                if (response.ok && data.success) {
+                    resultDiv.className = 'result success';
+                    resultDiv.textContent = `✅ Отладка успешна!\n\n` +
+                        `Простой результат:\n${data.simpleResult}\n\n` +
+                        `Результат генерации тестов:\n${data.testsResult}\n\n` +
+                        `Окружение:\n${JSON.stringify(data.environment, null, 2)}`;
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.textContent = `❌ Ошибка отладки:\n${data.error}\n\n` +
+                        `Детали:\n${data.details}\n\n` +
+                        `Полный ответ:\n${JSON.stringify(data, null, 2)}`;
+                }
+            } catch (error) {
+                console.error('Ошибка:', error);
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `❌ Ошибка сети: ${error.message}`;
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        async function testOriginalEndpoint() {
+            const resultDiv = document.getElementById('result');
+            const btn = document.getElementById('originalBtn');
+            
+            btn.disabled = true;
+            resultDiv.className = 'result loading';
+            resultDiv.textContent = '⏳ Тестирую оригинальный endpoint...';
+            
+            try {
+                const response = await fetch('/api/ai/analyze', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        action: 'generateExecutableTests',
+                        data: {
+                            serviceName: 'JSONPlaceholder'
+                        }
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.result) {
+                    resultDiv.className = 'result success';
+                    resultDiv.textContent = `✅ Оригинальный endpoint работает!\n\nРезультат:\n${data.result}`;
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.textContent = `❌ Ошибка оригинального endpoint:\n${data.error || 'Неизвестная ошибка'}\n\nПолный ответ:\n${JSON.stringify(data, null, 2)}`;
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `❌ Ошибка сети: ${error.message}`;
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        async function testGeminiDirect() {
+            const resultDiv = document.getElementById('result');
+            const btn = document.getElementById('geminiBtn');
+            
+            btn.disabled = true;
+            resultDiv.className = 'result loading';
+            resultDiv.textContent = '⏳ Тестирую Gemini напрямую...';
+            
+            try {
+                const response = await fetch('/api/test-gemini-direct', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        prompt: 'Создай JSON массив с одним тестом для JSONPlaceholder API'
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    resultDiv.className = 'result success';
+                    resultDiv.textContent = `✅ Gemini напрямую работает!\n\nОтвет:\n${data.response}`;
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.textContent = `❌ Ошибка Gemini:\n${data.error}\n\nДетали:\n${data.details}`;
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `❌ Ошибка сети: ${error.message}`;
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        // Автоматический запуск при загрузке
+        window.addEventListener('load', () => {
+            console.log('Страница загружена, запускаю автотест...');
+            setTimeout(testDebugGeneration, 1000);
+        });
+    </script>
+</body>
+</html>

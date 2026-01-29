@@ -45,9 +45,31 @@ export async function POST(request: NextRequest) {
     if (!response.ok) {
       const errorText = await response.text()
       console.error('Gemini API error:', errorText)
+      
+      let errorData;
+      try {
+        errorData = JSON.parse(errorText);
+      } catch (e) {
+        errorData = { error: { message: errorText } };
+      }
+      
+      // Специфичные сообщения для разных ошибок
+      let userMessage = `Gemini API ошибка: ${response.status} ${response.statusText}`;
+      
+      if (response.status === 400 && errorData.error?.message?.includes('User location is not supported')) {
+        userMessage = 'Google AI Studio API недоступен в вашем регионе. Используйте VPN или альтернативные AI сервисы.';
+      } else if (response.status === 404 && errorData.error?.message?.includes('not found')) {
+        userMessage = 'Указанная модель Gemini не найдена. Проверьте конфигурацию модели.';
+      } else if (response.status === 429) {
+        userMessage = 'Превышен лимит запросов к Gemini API. Попробуйте позже.';
+      } else if (response.status === 401 || response.status === 403) {
+        userMessage = 'Неверный API ключ или нет доступа к Gemini API.';
+      }
+      
       return NextResponse.json({ 
-        error: `Gemini API ошибка: ${response.status} ${response.statusText}`,
-        details: errorText
+        error: userMessage,
+        details: errorData.error?.message || errorText,
+        status: response.status
       }, { status: response.status })
     }
 

@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Простой тест генерации</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        button { padding: 10px 20px; margin: 10px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        .result { margin-top: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 5px; white-space: pre-wrap; font-family: monospace; }
+        .success { background: #d4edda; border-color: #c3e6cb; }
+        .error { background: #f8d7da; border-color: #f5c6cb; }
+        .loading { background: #d1ecf1; border-color: #bee5eb; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Простой тест генерации тестов</h1>
+    
+    <button onclick="testGeneration()">🚀 Тест генерации исполняемых тестов</button>
+    <button onclick="testGeminiDirect()">🤖 Тест Gemini напрямую</button>
+    
+    <div id="result"></div>
+
+    <script>
+        async function testGeneration() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.className = 'result loading';
+            resultDiv.textContent = '⏳ Тестирую генерацию тестов...';
+            
+            try {
+                console.log('Отправляю запрос к /api/ai/analyze');
+                
+                const response = await fetch('/api/ai/analyze', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        action: 'generateExecutableTests',
+                        data: {
+                            serviceName: 'JSONPlaceholder'
+                        }
+                    })
+                });
+                
+                console.log('Ответ получен:', response.status, response.statusText);
+                
+                const data = await response.json();
+                console.log('Данные:', data);
+                
+                if (response.ok && data.result) {
+                    resultDiv.className = 'result success';
+                    resultDiv.textContent = `✅ Успешно!\n\nРезультат:\n${data.result}`;
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.textContent = `❌ Ошибка: ${data.error || 'Неизвестная ошибка'}\n\nПолный ответ:\n${JSON.stringify(data, null, 2)}`;
+                }
+            } catch (error) {
+                console.error('Ошибка:', error);
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `❌ Ошибка сети: ${error.message}`;
+            }
+        }
+
+        async function testGeminiDirect() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.className = 'result loading';
+            resultDiv.textContent = '⏳ Тестирую Gemini напрямую...';
+            
+            try {
+                console.log('Отправляю запрос к /api/test-gemini-direct');
+                
+                const response = await fetch('/api/test-gemini-direct', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        prompt: 'Привет! Ответь кратко на русском языке.'
+                    })
+                });
+                
+                console.log('Ответ получен:', response.status, response.statusText);
+                
+                const data = await response.json();
+                console.log('Данные:', data);
+                
+                if (response.ok && data.success) {
+                    resultDiv.className = 'result success';
+                    resultDiv.textContent = `✅ Gemini работает!\n\nОтвет: ${data.response}`;
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.textContent = `❌ Ошибка Gemini: ${data.error || 'Неизвестная ошибка'}\n\nДетали: ${data.details || 'Нет деталей'}`;
+                }
+            } catch (error) {
+                console.error('Ошибка:', error);
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `❌ Ошибка сети: ${error.message}`;
+            }
+        }
+    </script>
+</body>
+</html>

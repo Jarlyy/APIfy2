@@ -1,7 +1,25 @@
+'use client'
+
 import Header from '@/components/Header'
 import ApiTestingWorkspace from '@/components/ApiTestingWorkspace'
+import { useAuth } from '@/hooks/useAuth'
 
-export default async function DashboardPage() {
+export default function DashboardPage() {
+  const { user, loading } = useAuth()
+  
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-zinc-50 dark:bg-zinc-900">
+        <Header />
+        <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <p className="text-zinc-600 dark:text-zinc-400">Загрузка...</p>
+          </div>
+        </main>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-900">
       <Header />
@@ -16,7 +34,7 @@ export default async function DashboardPage() {
           </p>
         </div>
 
-        <ApiTestingWorkspace userId="guest-user" />
+        <ApiTestingWorkspace userId={user?.id || 'guest-user'} />
       </main>
     </div>
   )
