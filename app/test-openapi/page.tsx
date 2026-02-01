@@ -6,6 +6,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge'
 import { ExternalLink, FileText, Download, CheckCircle } from 'lucide-react'
 
+// Отключаем статическую генерацию для этой страницы
+export const dynamic = 'force-dynamic'
+
 export default function TestOpenApiPage() {
   const [selectedSpec, setSelectedSpec] = useState<string | null>(null)
 
@@ -158,7 +161,7 @@ export default function TestOpenApiPage() {
                     <div className="text-sm">
                       <strong>URL для импорта:</strong>
                       <code className="block bg-muted p-2 rounded text-xs mt-1 break-all">
-                        {window.location.origin}{spec.url}
+                        {typeof window !== 'undefined' ? window.location.origin : ''}{spec.url}
                       </code>
                     </div>
                     
@@ -166,7 +169,7 @@ export default function TestOpenApiPage() {
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => copyToClipboard(`${window.location.origin}${spec.url}`)}
+                        onClick={() => copyToClipboard(`${typeof window !== 'undefined' ? window.location.origin : ''}${spec.url}`)}
                       >
                         Копировать URL
                       </Button>

@@ -6,6 +6,9 @@ import Header from '@/components/Header'
 import MainWorkspace from '@/components/MainWorkspace'
 import { useAuth } from '@/hooks/useAuth'
 
+// Отключаем статическую генерацию для этой страницы
+export const dynamic = 'force-dynamic'
+
 function DashboardContent() {
   const { user, loading } = useAuth()
   const searchParams = useSearchParams()
