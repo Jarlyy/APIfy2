@@ -1,12 +1,12 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Header from '@/components/Header'
 import MainWorkspace from '@/components/MainWorkspace'
 import { useAuth } from '@/hooks/useAuth'
 
-export default function DashboardPage() {
+function DashboardContent() {
   const { user, loading } = useAuth()
   const searchParams = useSearchParams()
   const tabFromUrl = searchParams.get('tab')
@@ -58,5 +58,21 @@ export default function DashboardPage() {
         testData={testData}
       />
     </div>
+  )
+}
+
+export default function DashboardPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-zinc-50 dark:bg-zinc-900">
+        <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <p className="text-zinc-600 dark:text-zinc-400">Загрузка...</p>
+          </div>
+        </div>
+      </div>
+    }>
+      <DashboardContent />
+    </Suspense>
   )
 }
