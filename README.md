@@ -1,97 +1,133 @@
-# APIfy - API Testing Application
+# APIfy2 - Advanced API Testing Platform
 
-Веб-приложение для проверки работоспособности API-сервисов.
+A modern, feature-rich API testing platform built with Next.js, Supabase, and AI integration.
 
-## Технологический стек
+## 🚀 Features
 
-- **Frontend**: Next.js 16 (App Router), TypeScript, Tailwind CSS
-- **UI Components**: shadcn/ui
-- **Backend & Auth**: Supabase
-- **Package Manager**: pnpm
+- **AI-Powered Test Generation**: Generate API tests using Gemini and Hugging Face models
+- **Manual API Testing**: Comprehensive manual testing with various authentication methods
+- **OpenAPI/Swagger Import**: Import and test APIs from OpenAPI specifications
+- **Test History**: Track and analyze all your API tests with detailed statistics
+- **Favorites**: Save frequently used API tests for quick access
+- **CORS Proxy**: Built-in CORS bypass functionality
+- **Real-time Analysis**: AI-powered response analysis and insights
+- **Dark/Light Theme**: Modern UI with theme support
 
-## Установка и настройка
+## 🛠 Tech Stack
 
-### 1. Установка зависимостей
+- **Frontend**: Next.js 16, React 19, TypeScript
+- **Backend**: Supabase (PostgreSQL, Auth, Real-time)
+- **UI**: Tailwind CSS, Radix UI, Lucide Icons
+- **AI**: Google Gemini, Hugging Face Transformers
+- **Deployment**: Vercel
 
+## 📦 Installation
+
+1. Clone the repository:
 ```bash
+git clone https://github.com/Jarlyy/APIfy2.git
+cd APIfy2
+```
+
+2. Install dependencies:
+```bash
+npm install
+# or
 pnpm install
 ```
 
-### 2. Настройка Supabase
-
-1. Создайте проект на [supabase.com](https://supabase.com)
-2. Скопируйте `.env.local` и заполните переменные окружения:
-
-```env
-NEXT_PUBLIC_SUPABASE_URL=your-supabase-url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
+3. Set up environment variables:
+```bash
+cp .env.example .env.local
 ```
 
-3. Выполните SQL скрипт из файла `supabase/schema.sql` в SQL Editor вашего проекта Supabase
+Fill in your Supabase and AI provider credentials.
 
-### 3. Запуск приложения
-
+4. Run the development server:
 ```bash
+npm run dev
+# or
 pnpm dev
 ```
 
-Приложение будет доступно по адресу [http://localhost:3000](http://localhost:3000)
+## 🌐 Deployment on Vercel
 
-## Структура проекта
+### Prerequisites
+- Vercel account
+- Supabase project
+- AI provider API keys (Gemini, Hugging Face)
 
-```
-├── app/
-│   ├── dashboard/          # Главная страница с формой тестирования
-│   ├── history/            # История тестов
-│   ├── login/              # Страница входа
-│   ├── signup/             # Страница регистрации
-│   └── page.tsx            # Корневая страница (редирект)
-├── components/
-│   ├── ApiTestForm.tsx     # Форма для тестирования API
-│   ├── Header.tsx          # Шапка приложения
-│   └── TestHistoryList.tsx # Список истории тестов
-├── lib/
-│   ├── supabase/           # Клиенты Supabase
-│   └── types/              # TypeScript типы
-└── supabase/
-    └── schema.sql          # SQL схема базы данных
-```
+### Deploy Steps
 
-## Функциональность (MVP)
+1. **Connect to Vercel**:
+   - Import your GitHub repository to Vercel
+   - Or use Vercel CLI: `vercel --prod`
 
-### Реализовано (Фазы 1-5):
+2. **Environment Variables**:
+   Set these in Vercel dashboard or via CLI:
+   ```
+   NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+   GEMINI_API_KEY=your_gemini_key
+   HUGGINGFACE_API_KEY=your_huggingface_key
+   ```
 
-- ✅ Регистрация и аутентификация пользователей
-- ✅ Форма для ручного ввода URL API
-- ✅ Выбор HTTP методов (GET, POST, PUT, DELETE, PATCH)
-- ✅ Добавление заголовков и тела запроса
-- ✅ Выполнение запросов к API
-- ✅ Отображение результатов (статус, время отклика, тело ответа)
-- ✅ Сохранение результатов в базу данных
-- ✅ История проверок с фильтрацией
-- ✅ Просмотр деталей каждой проверки
+3. **Database Setup**:
+   - Run the SQL schema from `supabase/schema.sql` in your Supabase project
+   - Enable Row Level Security (RLS) policies
 
-### Планируется (Фазы 6-10):
+4. **Deploy**:
+   - Vercel will automatically build and deploy
+   - Your app will be available at `https://your-app.vercel.app`
 
-- ⏳ Тестирование различных методов аутентификации
-- ⏳ Интеграция с OpenAPI/Swagger
-- ⏳ Мониторинг и аналитика
-- ⏳ Улучшение UX (избранное, шаблоны, экспорт)
-- ⏳ Интеграция нейросети для автоматического поиска API
+### Vercel Configuration
 
-## База данных
+The project includes optimized `vercel.json` configuration:
+- API routes with 30s timeout
+- CORS headers for API endpoints
+- Optimized build settings
 
-Схема включает следующие таблицы:
+## 🔧 Configuration
 
-- `users` - профили пользователей
-- `api_tests` - результаты тестов API
-- `test_history` - история запросов
-- `api_documentation` - документация API (для будущего использования)
+### Supabase Setup
+1. Create a new Supabase project
+2. Run the schema from `supabase/schema.sql`
+3. Configure authentication providers if needed
+4. Set up RLS policies for security
 
-## Разработка
+### AI Providers
+- **Gemini**: Get API key from Google AI Studio
+- **Hugging Face**: Get API key from Hugging Face Hub
 
-Следуйте плану разработки из `docs/development-plan.md`
+## 📱 Usage
 
-## Лицензия
+1. **Manual Testing**: Create and execute API tests with various auth methods
+2. **AI Generation**: Generate test suites using AI for any API service
+3. **OpenAPI Import**: Import Swagger/OpenAPI specs and test endpoints
+4. **History & Analytics**: View test history and performance analytics
+5. **Favorites**: Save commonly used tests for quick access
 
-MIT
+## 🔒 Security
+
+- Environment variables for sensitive data
+- Row Level Security (RLS) in Supabase
+- CORS protection and security headers
+- Input validation and sanitization
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Submit a pull request
+
+## 📄 License
+
+This project is licensed under the MIT License.
+
+## 🆘 Support
+
+For support and questions:
+- Create an issue on GitHub
+- Check the documentation in `/docs`
+- Review the setup guide in `SETUP.md`
