@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -9,12 +9,15 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { 
   Loader2, Brain, Play, CheckCircle, XCircle, Clock, 
-  Settings, Eye, EyeOff, Zap
+  Settings, Eye, EyeOff, Zap, Heart
 } from 'lucide-react';
 import CorsProxySettings from './CorsProxySettings';
 import AiAnalysis from './AiAnalysis';
+import AIProviderSelector from './AIProviderSelector';
 import { applyProxy, getCurrentProxy, getCorsProxyEnabled, setCorsProxyEnabled } from '@/lib/cors-proxy';
 import { isAiAnalysisEnabled, setAiAnalysisEnabled } from '@/lib/ai-analysis';
+import { saveTestToHistory, TestHistoryItem } from '@/lib/test-history';
+import { addToFavorites, isFavorite } from '@/lib/favorites';
 
 type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
 type AuthType = 'none' | 'bearer' | 'api-key' | 'basic';
@@ -46,13 +49,41 @@ interface TestResult {
 
 interface UnifiedApiTesterProps {
   userId: string;
+  testData?: {
+    serviceName: string
+    url: string
+    method: string
+    headers: Record<string, string>
+    body: string
+    authType: string
+    authToken: string
+  }
 }
 
-export function UnifiedApiTester({ userId }: UnifiedApiTesterProps) {
+export function UnifiedApiTester({ userId, testData }: UnifiedApiTesterProps) {
+  // Функция для получения цвета метода HTTP
+  const getMethodColor = (method: string) => {
+    switch (method.toUpperCase()) {
+      case 'GET':
+        return 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400'
+      case 'POST':
+        return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
+      case 'PUT':
+        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400'
+      case 'DELETE':
+        return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
+      case 'PATCH':
+        return 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400'
+      default:
+        return 'bg-zinc-100 text-zinc-800 dark:bg-zinc-900/20 dark:text-zinc-400'
+    }
+  }
+
   // AI Generation State
   const [testServiceName, setTestServiceName] = useState('');
   const [aiLoading, setAiLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('ai-tests');
+  const [currentAIProvider, setCurrentAIProvider] = useState<'gemini' | 'huggingface'>('huggingface');
 
   // Generated Tests State
   const [generatedTests, setGeneratedTests] = useState<ExecutableTest[]>([]);
@@ -77,6 +108,67 @@ export function UnifiedApiTester({ userId }: UnifiedApiTesterProps) {
   const [manualResult, setManualResult] = useState<any>(null);
   const [manualLoading, setManualLoading] = useState(false);
   const [corsProxyEnabled, setCorsProxyEnabledState] = useState(getCorsProxyEnabled());
+  const [savingToFavorites, setSavingToFavorites] = useState(false);
+  const [isCurrentTestFavorite, setIsCurrentTestFavorite] = useState(false);
+  const [notification, setNotification] = useState<{
+    message: string
+    type: 'success' | 'error'
+    visible: boolean
+  }>({ message: '', type: 'success', visible: false });
+
+  // Заполняем форму данными из истории при получении testData
+  useEffect(() => {
+    if (testData) {
+      setManualTest({
+        serviceName: testData.serviceName || '',
+        url: testData.url || '',
+        method: (testData.method as HttpMethod) || 'GET',
+        headers: JSON.stringify(testData.headers || {}, null, 2),
+        body: testData.body || '',
+        authType: (testData.authType as AuthType) || 'none',
+        bearerToken: testData.authType === 'bearer' ? testData.authToken : '',
+        apiKey: testData.authType === 'api-key' ? testData.authToken : '',
+        apiKeyHeader: 'X-API-Key',
+        basicUsername: '',
+        basicPassword: ''
+      })
+      // Переключаемся на вкладку ручного тестирования
+      setActiveTab('manual')
+    }
+  }, [testData])
+
+  const showNotification = (message: string, type: 'success' | 'error') => {
+    setNotification({ message, type, visible: true })
+    setTimeout(() => {
+      setNotification(prev => ({ ...prev, visible: false }))
+    }, 5000)
+  }
+
+  // Проверяем, есть ли текущий тест в избранном
+  useEffect(() => {
+    const checkFavoriteStatus = async () => {
+      if (manualTest.url && manualTest.method) {
+        try {
+          const result = await isFavorite(manualTest.url, manualTest.method)
+          if (result.success) {
+            setIsCurrentTestFavorite(result.data || false)
+          }
+        } catch (error) {
+          console.error('Ошибка проверки избранного:', error)
+        }
+      } else {
+        setIsCurrentTestFavorite(false)
+      }
+    }
+
+    checkFavoriteStatus()
+  }, [manualTest.url, manualTest.method])
+
+  // AI Provider Functions
+  const handleProviderChange = (provider: 'gemini' | 'huggingface') => {
+    setCurrentAIProvider(provider);
+    console.log('Переключен AI провайдер на:', provider);
+  };
   const [aiAnalysisEnabled, setAiAnalysisEnabledState] = useState(isAiAnalysisEnabled());
 
   // AI Generation Functions
@@ -92,7 +184,10 @@ export function UnifiedApiTester({ userId }: UnifiedApiTesterProps) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action: 'generateExecutableTests',
-          data: { serviceName: testServiceName.trim() }
+          data: { 
+            serviceName: testServiceName.trim(),
+            aiProvider: currentAIProvider
+          }
         })
       });
 
@@ -116,11 +211,138 @@ export function UnifiedApiTester({ userId }: UnifiedApiTesterProps) {
         if (typeof data.result === 'object') {
           testsData = data.result;
         } else {
-          const jsonMatch = data.result.match(/\[[\s\S]*\]/);
+          // Remove markdown code blocks if present
+          let cleanedResult = data.result
+            .replace(/```json\s*/gi, '')
+            .replace(/```\s*/g, '')
+            .replace(/^[^[\{]*/, '') // Remove any text before JSON starts
+            .replace(/[^}\]]*$/, '') // Remove any text after JSON ends
+            .trim();
+          
+          console.log('Очищенный результат:', cleanedResult.substring(0, 200) + '...');
+          
+          // Try to extract JSON array from the response
+          const jsonMatch = cleanedResult.match(/\[[\s\S]*\]/);
           if (jsonMatch) {
-            testsData = JSON.parse(jsonMatch[0]);
+            let jsonString = jsonMatch[0];
+            
+            // Fix common JSON issues
+            // Replace single quotes with double quotes for property names
+            jsonString = jsonString.replace(/'([^']+)':/g, '"$1":');
+            // Replace single quotes around string values with double quotes
+            jsonString = jsonString.replace(/:\s*'([^']*)'/g, ': "$1"');
+            // Remove trailing commas before closing brackets/braces
+            jsonString = jsonString.replace(/,(\s*[}\]])/g, '$1');
+            
+            // Fix unterminated strings - find last quote and close it
+            const lastQuoteIndex = jsonString.lastIndexOf('"');
+            if (lastQuoteIndex > -1) {
+              const afterLastQuote = jsonString.substring(lastQuoteIndex + 1);
+              // If there's content after the last quote that doesn't end with quote, close it
+              if (afterLastQuote && !afterLastQuote.match(/^[^"]*"/) && afterLastQuote.includes(':')) {
+                const colonIndex = jsonString.lastIndexOf(':', lastQuoteIndex);
+                if (colonIndex > lastQuoteIndex) {
+                  // Find where the unterminated string starts
+                  const beforeColon = jsonString.substring(0, colonIndex);
+                  const afterColon = jsonString.substring(colonIndex + 1).trim();
+                  if (afterColon.startsWith('"') && !afterColon.substring(1).includes('"')) {
+                    // Close the unterminated string
+                    jsonString = beforeColon + colonIndex + ': "' + afterColon.substring(1).replace(/[^a-zA-Z0-9\s\-_.,!?()]/g, '') + '"';
+                  }
+                }
+              }
+            }
+            
+            // Fix incomplete objects - if JSON is cut off, try to complete it
+            const openBraces = (jsonString.match(/\{/g) || []).length;
+            const closeBraces = (jsonString.match(/\}/g) || []).length;
+            const openBrackets = (jsonString.match(/\[/g) || []).length;
+            const closeBrackets = (jsonString.match(/\]/g) || []).length;
+            
+            // Close missing braces
+            if (openBraces > closeBraces) {
+              jsonString = jsonString + '}'.repeat(openBraces - closeBraces);
+            }
+            if (openBrackets > closeBrackets) {
+              jsonString = jsonString + ']'.repeat(openBrackets - closeBrackets);
+            }
+            
+            console.log('Исправленный JSON:', jsonString.substring(0, 500) + '...');
+            
+            try {
+              testsData = JSON.parse(jsonString);
+            } catch (parseError) {
+              console.error('JSON parsing failed, attempting to extract valid objects...');
+              console.error('Parse error:', parseError);
+              
+              // Try to extract valid complete objects from array
+              const objectPattern = /\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}/g;
+              const objectMatches = jsonString.match(objectPattern);
+              
+              if (objectMatches && objectMatches.length > 0) {
+                testsData = [];
+                for (const objStr of objectMatches) {
+                  try {
+                    const obj = JSON.parse(objStr);
+                    // Validate that it has required fields
+                    if (obj.id && obj.name && obj.url && obj.method) {
+                      testsData.push(obj);
+                    }
+                  } catch (e) {
+                    console.warn('Skipping invalid object:', objStr.substring(0, 100));
+                  }
+                }
+                
+                if (testsData.length > 0) {
+                  console.log('Recovered partial data:', testsData.length, 'valid tests');
+                } else {
+                  throw new Error('Не удалось извлечь валидные тесты из ответа');
+                }
+              } else {
+                throw new Error(`Ошибка парсинга JSON: ${parseError instanceof Error ? parseError.message : 'Неизвестная ошибка'}`);
+              }
+            }
           } else {
-            testsData = JSON.parse(data.result);
+            // Try to parse as direct JSON
+            try {
+              testsData = JSON.parse(cleanedResult);
+            } catch (directParseError) {
+              console.error('Direct JSON parsing failed, attempting to fix truncated JSON...');
+              
+              // Try to fix truncated JSON
+              let fixedJson = cleanedResult;
+              
+              // If JSON is cut off in the middle, try to complete it
+              if (!fixedJson.endsWith(']')) {
+                // Find the last complete object
+                const lastCompleteObjectMatch = fixedJson.match(/.*(\{[^{}]*\})/);
+                if (lastCompleteObjectMatch) {
+                  const lastCompleteIndex = fixedJson.lastIndexOf(lastCompleteObjectMatch[1]) + lastCompleteObjectMatch[1].length;
+                  fixedJson = fixedJson.substring(0, lastCompleteIndex);
+                  
+                  // Add closing bracket if needed
+                  if (!fixedJson.endsWith(']')) {
+                    fixedJson += ']';
+                  }
+                } else {
+                  // If no complete objects found, try to extract individual complete objects
+                  const objectMatches = fixedJson.match(/\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}/g);
+                  if (objectMatches && objectMatches.length > 0) {
+                    fixedJson = '[' + objectMatches.join(',') + ']';
+                  } else {
+                    throw directParseError;
+                  }
+                }
+              }
+              
+              try {
+                testsData = JSON.parse(fixedJson);
+                console.log('Successfully fixed truncated JSON, recovered', Array.isArray(testsData) ? testsData.length : 0, 'tests');
+              } catch (fixError) {
+                console.error('Failed to fix JSON:', fixError);
+                throw directParseError;
+              }
+            }
           }
         }
 
@@ -134,23 +356,15 @@ export function UnifiedApiTester({ userId }: UnifiedApiTesterProps) {
         }
       } catch (e) {
         console.error('Ошибка парсинга тестов:', e);
-        alert('Не удалось распарсить тесты от AI. Попробуйте еще раз.');
+        console.error('Исходный ответ:', data.result);
+        alert(`Не удалось распарсить тесты от AI.\n\n${e instanceof Error ? e.message : 'Неизвестная ошибка'}\n\nПроверьте консоль для деталей.`);
+        setGeneratedTests([]);
       }
     } catch (error) {
       console.error('Ошибка генерации исполняемых тестов:', error);
-      alert(`Ошибка при генерации тестов: ${error.message}`);
+      alert(`Ошибка при генерации тестов: ${error instanceof Error ? error.message : 'Неизвестная ошибка'}`);
     } finally {
       setAiLoading(false);
-    }
-  };
-
-  const loadDemoTests = async () => {
-    try {
-      const response = await fetch('/demo-api-tests.json');
-      const demoTests = await response.json();
-      setGeneratedTests(demoTests);
-    } catch (error) {
-      console.error('Ошибка загрузки демо-тестов:', error);
     }
   };
 
@@ -214,6 +428,29 @@ export function UnifiedApiTester({ userId }: UnifiedApiTesterProps) {
           };
 
           setResults(prev => ({ ...prev, [test.id]: result }));
+
+          // Сохраняем в историю через Supabase
+          const historyItem: TestHistoryItem = {
+            service_name: test.name || 'Generated Test',
+            test_name: test.name,
+            url: test.url,
+            method: test.method,
+            headers: test.headers,
+            body: test.body,
+            auth_type: test.auth_type,
+            auth_token: test.auth_token,
+            status_code: proxyResult.status,
+            response_data: proxyResult.data,
+            response_time: duration,
+            test_status: result.status === 'error' ? 'error' : 'success',
+            ai_provider: currentAIProvider
+          };
+
+          // Сохраняем асинхронно, не блокируя UI
+          saveTestToHistory(historyItem).catch(error => {
+            console.error('Ошибка сохранения в историю:', error);
+          });
+
           return;
         }
       }
@@ -249,6 +486,28 @@ export function UnifiedApiTester({ userId }: UnifiedApiTesterProps) {
 
       setResults(prev => ({ ...prev, [test.id]: result }));
 
+      // Сохраняем в историю через Supabase
+      const historyItem: TestHistoryItem = {
+        service_name: test.name || 'Generated Test',
+        test_name: test.name,
+        url: test.url,
+        method: test.method,
+        headers: test.headers,
+        body: test.body,
+        auth_type: test.auth_type,
+        auth_token: test.auth_token,
+        status_code: response.status,
+        response_data: responseData,
+        response_time: duration,
+        test_status: result.status === 'error' ? 'error' : 'success',
+        ai_provider: currentAIProvider
+      };
+
+      // Сохраняем асинхронно, не блокируя UI
+      saveTestToHistory(historyItem).catch(error => {
+        console.error('Ошибка сохранения в историю:', error);
+      });
+
     } catch (error) {
       const duration = Date.now() - startTime;
       let errorMessage = 'Неизвестная ошибка';
@@ -267,6 +526,27 @@ export function UnifiedApiTester({ userId }: UnifiedApiTesterProps) {
       };
 
       setResults(prev => ({ ...prev, [test.id]: result }));
+
+      // Сохраняем ошибку в историю через Supabase
+      const historyItem: TestHistoryItem = {
+        service_name: test.name || 'Generated Test',
+        test_name: test.name,
+        url: test.url,
+        method: test.method,
+        headers: test.headers,
+        body: test.body,
+        auth_type: test.auth_type,
+        auth_token: test.auth_token,
+        error_message: errorMessage,
+        response_time: duration,
+        test_status: 'error',
+        ai_provider: currentAIProvider
+      };
+
+      // Сохраняем асинхронно, не блокируя UI
+      saveTestToHistory(historyItem).catch(error => {
+        console.error('Ошибка сохранения в историю:', error);
+      });
     }
   };
 
@@ -340,19 +620,28 @@ export function UnifiedApiTester({ userId }: UnifiedApiTesterProps) {
 
           setManualResult(result);
 
-          // Сохраняем в историю
-          const historyItem = {
-            id: Date.now().toString(),
-            serviceName: manualTest.serviceName,
+          // Сохраняем в историю через Supabase
+          const historyItem: TestHistoryItem = {
+            service_name: manualTest.serviceName || 'Manual Test',
+            test_name: manualTest.serviceName,
             url: manualTest.url,
             method: manualTest.method,
-            result,
-            timestamp: new Date().toISOString()
+            headers: parsedHeaders,
+            body: manualTest.body,
+            auth_type: manualTest.authType,
+            auth_token: manualTest.authType === 'bearer' ? manualTest.bearerToken : 
+                       manualTest.authType === 'api-key' ? manualTest.apiKey : '',
+            status_code: proxyResult.status,
+            response_data: proxyResult.data,
+            response_time: responseTime,
+            test_status: proxyResult.status >= 200 && proxyResult.status < 300 ? 'success' : 'error',
+            ai_provider: currentAIProvider
           };
 
-          const history = JSON.parse(localStorage.getItem('testHistory') || '[]');
-          history.unshift(historyItem);
-          localStorage.setItem('testHistory', JSON.stringify(history.slice(0, 50)));
+          // Сохраняем асинхронно, не блокируя UI
+          saveTestToHistory(historyItem).catch(error => {
+            console.error('Ошибка сохранения в историю:', error);
+          });
           
           return;
         }
@@ -385,19 +674,28 @@ export function UnifiedApiTester({ userId }: UnifiedApiTesterProps) {
 
       setManualResult(result);
 
-      // Сохраняем в историю
-      const historyItem = {
-        id: Date.now().toString(),
-        serviceName: manualTest.serviceName,
+      // Сохраняем в историю через Supabase
+      const historyItem: TestHistoryItem = {
+        service_name: manualTest.serviceName || 'Manual Test',
+        test_name: manualTest.serviceName,
         url: manualTest.url,
         method: manualTest.method,
-        result,
-        timestamp: new Date().toISOString()
+        headers: parsedHeaders,
+        body: manualTest.body,
+        auth_type: manualTest.authType,
+        auth_token: manualTest.authType === 'bearer' ? manualTest.bearerToken : 
+                   manualTest.authType === 'api-key' ? manualTest.apiKey : '',
+        status_code: response.status,
+        response_data: data,
+        response_time: responseTime,
+        test_status: response.status >= 200 && response.status < 300 ? 'success' : 'error',
+        ai_provider: currentAIProvider
       };
 
-      const history = JSON.parse(localStorage.getItem('testHistory') || '[]');
-      history.unshift(historyItem);
-      localStorage.setItem('testHistory', JSON.stringify(history.slice(0, 50)));
+      // Сохраняем асинхронно, не блокируя UI
+      saveTestToHistory(historyItem).catch(error => {
+        console.error('Ошибка сохранения в историю:', error);
+      });
 
     } catch (error) {
       setManualResult({
@@ -429,6 +727,59 @@ export function UnifiedApiTester({ userId }: UnifiedApiTesterProps) {
     setActiveTab('manual');
   };
 
+  // Функция сохранения в избранное
+  const saveToFavorites = async () => {
+    if (!manualTest.url || !manualTest.method || !manualTest.serviceName) {
+      showNotification('Заполните название сервиса, URL и выберите метод для сохранения в избранное', 'error')
+      return
+    }
+
+    setSavingToFavorites(true)
+    try {
+      let parsedHeaders = {}
+      try {
+        parsedHeaders = JSON.parse(manualTest.headers)
+      } catch (e) {
+        // Игнорируем ошибки парсинга заголовков
+      }
+
+      // Подготавливаем данные аутентификации
+      let authData = {}
+      if (manualTest.authType === 'bearer' && manualTest.bearerToken) {
+        authData = { token: manualTest.bearerToken }
+      } else if (manualTest.authType === 'api-key' && manualTest.apiKey) {
+        authData = { apiKey: manualTest.apiKey, header: manualTest.apiKeyHeader }
+      } else if (manualTest.authType === 'basic' && manualTest.basicUsername && manualTest.basicPassword) {
+        authData = { username: manualTest.basicUsername, password: manualTest.basicPassword }
+      }
+
+      const favoriteData = {
+        name: manualTest.serviceName,
+        service_name: manualTest.serviceName,
+        url: manualTest.url,
+        method: manualTest.method,
+        headers: parsedHeaders,
+        body: manualTest.body || undefined,
+        auth_type: manualTest.authType,
+        auth_data: Object.keys(authData).length > 0 ? authData : undefined
+      }
+
+      const result = await addToFavorites(favoriteData)
+      
+      if (result.success) {
+        setIsCurrentTestFavorite(true)
+        showNotification('Тест добавлен в избранное!', 'success')
+      } else {
+        showNotification('Ошибка добавления в избранное: ' + result.error, 'error')
+      }
+    } catch (error) {
+      console.error('Ошибка сохранения в избранное:', error)
+      showNotification('Ошибка сохранения в избранное', 'error')
+    } finally {
+      setSavingToFavorites(false)
+    }
+  }
+
   const getStatusIcon = (result?: TestResult) => {
     if (!result) return null;
     
@@ -454,6 +805,30 @@ export function UnifiedApiTester({ userId }: UnifiedApiTesterProps) {
 
   return (
     <div className="space-y-6">
+      {/* Уведомления */}
+      {notification.visible && (
+        <div className={`fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg border animate-slide-in ${
+          notification.type === 'success' 
+            ? 'bg-green-50 border-green-200 text-green-800 dark:bg-green-900/20 dark:border-green-800 dark:text-green-200'
+            : 'bg-red-50 border-red-200 text-red-800 dark:bg-red-900/20 dark:border-red-800 dark:text-red-200'
+        }`}>
+          <div className="flex items-center gap-2">
+            {notification.type === 'success' ? (
+              <CheckCircle className="h-4 w-4" />
+            ) : (
+              <XCircle className="h-4 w-4" />
+            )}
+            <span className="text-sm font-medium">{notification.message}</span>
+            <button
+              onClick={() => setNotification(prev => ({ ...prev, visible: false }))}
+              className="ml-2 text-current opacity-70 hover:opacity-100"
+            >
+              ×
+            </button>
+          </div>
+        </div>
+      )}
+
       <Card>
         <CardHeader className="pb-4">
           <CardTitle className="flex items-center gap-2 text-lg">
@@ -479,7 +854,7 @@ export function UnifiedApiTester({ userId }: UnifiedApiTesterProps) {
             </TabsList>
 
             {/* AI Tests Tab - Combined Generation and Tests */}
-            <TabsContent value="ai-tests" className="space-y-4 mt-4">
+            <div className={`space-y-4 mt-4 ${activeTab !== 'ai-tests' ? 'hidden' : ''}`}>
               {/* AI Generation Section */}
               <div className="space-y-3 pb-4 border-b">
                 <div className="space-y-2">
@@ -509,19 +884,15 @@ export function UnifiedApiTester({ userId }: UnifiedApiTesterProps) {
                         </>
                       )}
                     </Button>
-                    <Button 
-                      onClick={loadDemoTests} 
-                      variant="outline"
-                      className="h-9"
-                    >
-                      <Play className="mr-2 h-3 w-3" />
-                      Демо
-                    </Button>
                   </div>
                   <p className="text-xs text-muted-foreground">
                     ИИ создаст готовые к запуску тесты для основных функций API
                   </p>
                 </div>
+
+                <AIProviderSelector 
+                  onProviderChange={handleProviderChange}
+                />
 
                 <div className="flex items-center gap-2 rounded-md border border-input bg-muted/50 p-3">
                   <input
@@ -575,7 +946,7 @@ export function UnifiedApiTester({ userId }: UnifiedApiTesterProps) {
                 <div className="text-center py-8 space-y-4">
                   <p className="text-muted-foreground">Нет сгенерированных тестов</p>
                   <p className="text-xs text-muted-foreground">
-                    Введите название API выше или загрузите демо-тесты
+                    Введите название API выше для генерации тестов
                   </p>
                 </div>
               ) : (
@@ -598,14 +969,15 @@ export function UnifiedApiTester({ userId }: UnifiedApiTesterProps) {
                           <CardContent className="p-3">
                             <div className="flex items-center justify-between">
                               <div className="flex items-center gap-3 flex-1 min-w-0">
-                                {getStatusIcon(result)}
+                                <span className={`px-2 py-1 rounded text-xs font-medium ${getMethodColor(test.method)}`}>
+                                  {test.method}
+                                </span>
                                 <div className="flex-1 min-w-0">
                                   <div className="flex items-center gap-2">
                                     <span className="font-medium text-sm truncate">{test.name}</span>
                                     <Badge variant="outline" className={`${getCategoryColor(test.category)} text-xs px-1 py-0`}>
                                       {test.category}
                                     </Badge>
-                                    <Badge variant="secondary" className="text-xs px-1 py-0">{test.method}</Badge>
                                   </div>
                                   <code className="text-xs bg-muted px-1 py-0.5 rounded truncate block max-w-md">
                                     {test.url}
@@ -613,35 +985,70 @@ export function UnifiedApiTester({ userId }: UnifiedApiTesterProps) {
                                 </div>
                               </div>
                               
-                              <div className="flex items-center gap-1">
-                                {result && (
+                              <div className="flex items-center gap-3">
+                                {/* Статус и время */}
+                                <div className="flex items-center gap-2">
+                                  {getStatusIcon(result)}
+                                  {result && (
+                                    <div className="text-xs">
+                                      {result.actualStatus && (
+                                        <Badge 
+                                          variant={result.status === 'success' ? 'default' : 'destructive'}
+                                          className="text-xs"
+                                        >
+                                          {result.actualStatus}
+                                        </Badge>
+                                      )}
+                                      {result.duration && (
+                                        <span className="ml-1 text-muted-foreground">
+                                          {result.duration}ms
+                                        </span>
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
+                                
+                                {/* Кнопки */}
+                                <div className="flex items-center gap-2">
+                                  {result && (result.response || result.error) && (
+                                    <Button
+                                      onClick={() => setExpandedResults(prev => ({ ...prev, [test.id]: !prev[test.id] }))}
+                                      size="sm"
+                                      variant={isExpanded ? "secondary" : "default"}
+                                    >
+                                      {isExpanded ? (
+                                        <>
+                                          <EyeOff className="h-3 w-3 mr-1" />
+                                          Скрыть
+                                        </>
+                                      ) : (
+                                        <>
+                                          <Eye className="h-3 w-3 mr-1" />
+                                          Результат
+                                        </>
+                                      )}
+                                    </Button>
+                                  )}
+                                  
+                                  <Button
+                                    onClick={() => runTest(test)}
+                                    disabled={result?.status === 'running'}
+                                    size="sm"
+                                  >
+                                    <Play className="h-3 w-3 mr-1" />
+                                    {result?.status === 'running' ? 'Тестируем...' : 'Тест'}
+                                  </Button>
+                                  
                                   <Button
                                     variant="ghost"
                                     size="sm"
-                                    onClick={() => setExpandedResults(prev => ({ ...prev, [test.id]: !prev[test.id] }))}
+                                    onClick={() => applyTestToManual(test)}
                                     className="h-7 w-7 p-0"
+                                    title="Редактировать в ручном режиме"
                                   >
-                                    {isExpanded ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
+                                    <Settings className="h-3 w-3" />
                                   </Button>
-                                )}
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => applyTestToManual(test)}
-                                  className="h-7 w-7 p-0"
-                                  title="Редактировать в ручном режиме"
-                                >
-                                  <Settings className="h-3 w-3" />
-                                </Button>
-                                <Button
-                                  onClick={() => runTest(test)}
-                                  disabled={result?.status === 'running'}
-                                  size="sm"
-                                  className="h-7"
-                                >
-                                  <Play className="h-3 w-3 mr-1" />
-                                  Тест
-                                </Button>
+                                </div>
                               </div>
                             </div>
 
@@ -683,6 +1090,7 @@ export function UnifiedApiTester({ userId }: UnifiedApiTesterProps) {
                                     apiUrl={test.url}
                                     httpMethod={test.method}
                                     httpStatus={result.actualStatus}
+                                    aiProvider={currentAIProvider}
                                   />
                                 )}
                               </div>
@@ -694,10 +1102,10 @@ export function UnifiedApiTester({ userId }: UnifiedApiTesterProps) {
                   </div>
                 </div>
               )}
-            </TabsContent>
+            </div>
 
             {/* Manual Test Tab */}
-            <TabsContent value="manual" className="space-y-4 mt-4">
+            <div className={`space-y-4 mt-4 ${activeTab !== 'manual' ? 'hidden' : ''}`}>
               <div className="grid gap-4">
                 <div className="grid grid-cols-2 gap-3">
                   <div>
@@ -853,23 +1261,38 @@ export function UnifiedApiTester({ userId }: UnifiedApiTesterProps) {
                   <CorsProxySettings />
                 )}
 
-                <Button 
-                  onClick={runManualTest} 
-                  disabled={manualLoading || !manualTest.url}
-                  className="w-full"
-                >
-                  {manualLoading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Выполняется...
-                    </>
-                  ) : (
-                    <>
-                      <Play className="mr-2 h-4 w-4" />
-                      Выполнить тест
-                    </>
-                  )}
-                </Button>
+                <div className="flex gap-2">
+                  <Button 
+                    onClick={runManualTest} 
+                    disabled={manualLoading || !manualTest.url}
+                    className="flex-1"
+                  >
+                    {manualLoading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Выполняется...
+                      </>
+                    ) : (
+                      <>
+                        <Play className="mr-2 h-4 w-4" />
+                        Выполнить тест
+                      </>
+                    )}
+                  </Button>
+
+                  <Button
+                    onClick={saveToFavorites}
+                    disabled={savingToFavorites || !manualTest.url || !manualTest.serviceName || isCurrentTestFavorite}
+                    variant={isCurrentTestFavorite ? "secondary" : "outline"}
+                    className="flex-shrink-0"
+                  >
+                    {savingToFavorites ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Heart className={`h-4 w-4 ${isCurrentTestFavorite ? 'fill-current text-red-500' : ''}`} />
+                    )}
+                  </Button>
+                </div>
 
                 {manualResult && (
                   <Card>
@@ -907,10 +1330,11 @@ export function UnifiedApiTester({ userId }: UnifiedApiTesterProps) {
                     apiUrl={manualTest.url}
                     httpMethod={manualTest.method}
                     httpStatus={manualResult.status}
+                    aiProvider={currentAIProvider}
                   />
                 )}
               </div>
-            </TabsContent>
+            </div>
           </Tabs>
         </CardContent>
       </Card>

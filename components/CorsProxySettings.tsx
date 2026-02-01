@@ -70,8 +70,16 @@ export default function CorsProxySettings() {
       </div>
       
       <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">
-        💡 Локальный прокси работает через ваш Next.js сервер и не имеет ограничений
+        💡 Локальный прокси работает через ваш Next.js сервер и полностью поддерживается на Vercel
       </p>
+      
+      {selectedProxy === 'local' && (
+        <div className="mt-2 rounded-md bg-blue-50 p-2 dark:bg-blue-900/20">
+          <p className="text-xs text-blue-700 dark:text-blue-300">
+            <strong>Vercel:</strong> Таймаут 8 сек, размер ответа до 6MB (Hobby) / 50MB (Pro)
+          </p>
+        </div>
+      )}
     </div>
   );
 }

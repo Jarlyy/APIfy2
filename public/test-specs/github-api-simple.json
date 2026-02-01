@@ -1,0 +1,434 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "GitHub API (Simplified)",
+    "description": "Simplified GitHub REST API for testing",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://api.github.com",
+      "description": "GitHub API server"
+    }
+  ],
+  "paths": {
+    "/user": {
+      "get": {
+        "summary": "Get the authenticated user",
+        "description": "Get information about the currently authenticated user",
+        "responses": {
+          "200": {
+            "description": "User information",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        }
+      }
+    },
+    "/users/{username}": {
+      "get": {
+        "summary": "Get a user",
+        "description": "Get public information about a GitHub user",
+        "parameters": [
+          {
+            "name": "username",
+            "in": "path",
+            "required": true,
+            "description": "The handle for the GitHub user account",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User information",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicUser"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "User not found"
+          }
+        }
+      }
+    },
+    "/users/{username}/repos": {
+      "get": {
+        "summary": "List repositories for a user",
+        "description": "Lists public repositories for the specified user",
+        "parameters": [
+          {
+            "name": "username",
+            "in": "path",
+            "required": true,
+            "description": "The handle for the GitHub user account",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "description": "Limit results to repositories of the specified type",
+            "schema": {
+              "type": "string",
+              "enum": ["all", "owner", "member"],
+              "default": "owner"
+            }
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "description": "The number of results per page (max 100)",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 30
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of repositories",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Repository"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "User not found"
+          }
+        }
+      }
+    },
+    "/repos/{owner}/{repo}": {
+      "get": {
+        "summary": "Get a repository",
+        "description": "Get information about a repository",
+        "parameters": [
+          {
+            "name": "owner",
+            "in": "path",
+            "required": true,
+            "description": "The account owner of the repository",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "repo",
+            "in": "path",
+            "required": true,
+            "description": "The name of the repository",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Repository information",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Repository"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Repository not found"
+          }
+        }
+      }
+    },
+    "/repos/{owner}/{repo}/issues": {
+      "get": {
+        "summary": "List repository issues",
+        "description": "List issues in a repository",
+        "parameters": [
+          {
+            "name": "owner",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "repo",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "state",
+            "in": "query",
+            "description": "The state of the issues to return",
+            "schema": {
+              "type": "string",
+              "enum": ["open", "closed", "all"],
+              "default": "open"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of issues",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Issue"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Create an issue",
+        "description": "Create a new issue",
+        "parameters": [
+          {
+            "name": "owner",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "repo",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IssueRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Issue created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Issue"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "User": {
+        "type": "object",
+        "properties": {
+          "login": {
+            "type": "string",
+            "example": "octocat"
+          },
+          "id": {
+            "type": "integer",
+            "example": 1
+          },
+          "name": {
+            "type": "string",
+            "example": "The Octocat"
+          },
+          "email": {
+            "type": "string",
+            "example": "octocat@github.com"
+          },
+          "bio": {
+            "type": "string",
+            "example": "There once was..."
+          },
+          "public_repos": {
+            "type": "integer",
+            "example": 2
+          },
+          "followers": {
+            "type": "integer",
+            "example": 20
+          },
+          "following": {
+            "type": "integer",
+            "example": 0
+          }
+        }
+      },
+      "PublicUser": {
+        "type": "object",
+        "properties": {
+          "login": {
+            "type": "string",
+            "example": "octocat"
+          },
+          "id": {
+            "type": "integer",
+            "example": 1
+          },
+          "name": {
+            "type": "string",
+            "example": "The Octocat"
+          },
+          "bio": {
+            "type": "string",
+            "example": "There once was..."
+          },
+          "public_repos": {
+            "type": "integer",
+            "example": 2
+          },
+          "followers": {
+            "type": "integer",
+            "example": 20
+          },
+          "following": {
+            "type": "integer",
+            "example": 0
+          }
+        }
+      },
+      "Repository": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "example": 1296269
+          },
+          "name": {
+            "type": "string",
+            "example": "Hello-World"
+          },
+          "full_name": {
+            "type": "string",
+            "example": "octocat/Hello-World"
+          },
+          "description": {
+            "type": "string",
+            "example": "This your first repo!"
+          },
+          "private": {
+            "type": "boolean",
+            "example": false
+          },
+          "html_url": {
+            "type": "string",
+            "example": "https://github.com/octocat/Hello-World"
+          },
+          "language": {
+            "type": "string",
+            "example": "C"
+          },
+          "stargazers_count": {
+            "type": "integer",
+            "example": 80
+          },
+          "forks_count": {
+            "type": "integer",
+            "example": 9
+          }
+        }
+      },
+      "Issue": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "example": 1
+          },
+          "number": {
+            "type": "integer",
+            "example": 1347
+          },
+          "title": {
+            "type": "string",
+            "example": "Found a bug"
+          },
+          "body": {
+            "type": "string",
+            "example": "I'm having a problem with this."
+          },
+          "state": {
+            "type": "string",
+            "enum": ["open", "closed"],
+            "example": "open"
+          },
+          "html_url": {
+            "type": "string",
+            "example": "https://github.com/octocat/Hello-World/issues/1347"
+          }
+        }
+      },
+      "IssueRequest": {
+        "type": "object",
+        "required": ["title"],
+        "properties": {
+          "title": {
+            "type": "string",
+            "example": "Found a bug"
+          },
+          "body": {
+            "type": "string",
+            "example": "I'm having a problem with this."
+          },
+          "labels": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "example": ["bug"]
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "token": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    }
+  }
+}

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { GeminiAPI } from '@/lib/gemini-api';
 
 export async function POST(request: NextRequest) {
   let requestBody: any;
@@ -14,10 +15,11 @@ export async function POST(request: NextRequest) {
       testName, 
       apiUrl, 
       httpMethod,
-      httpStatus 
+      httpStatus,
+      aiProvider = 'huggingface'
     } = requestBody;
 
-    console.log('AI Analysis request:', { testName, apiUrl, httpMethod, httpStatus });
+    console.log('AI Analysis request:', { testName, apiUrl, httpMethod, httpStatus, aiProvider });
 
     if (!actualResponse) {
       console.log('No actualResponse provided');
@@ -27,19 +29,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Проверяем наличие API ключа
-    if (!process.env.GEMINI_API_KEY) {
-      console.error('GEMINI_API_KEY not found in environment variables');
-      const fallbackAnalysis = generateFallbackAnalysis(actualResponse, expectedResponse, httpStatus);
-      return NextResponse.json({ 
-        analysis: fallbackAnalysis,
-        fallback: true,
-        error: 'AI API ключ не настроен'
-      });
-    }
-
-    // Формируем промпт для анализа
-    const prompt = `Проанализируй ответ API и дай краткий комментарий на русском языке (максимум 2-3 предложения).
+    // Используем универсальную систему AI провайдеров
+    try {
+      const geminiApi = new GeminiAPI(aiProvider);
+      
+      // Формируем промпт для анализа
+      const prompt = `Проанализируй ответ API и дай краткий комментарий на русском языке (максимум 2-3 предложения).
 
 ИНФОРМАЦИЯ О ТЕСТЕ:
 - Название теста: ${testName || 'Не указано'}
@@ -60,102 +55,58 @@ ${typeof expectedResponse === 'string' ? expectedResponse : JSON.stringify(expec
 
 Ответь кратко и по делу, используй эмодзи для наглядности.`;
 
-    console.log('Sending request to Google Gemini API...');
-    console.log('API Key present:', !!process.env.GEMINI_API_KEY);
-    console.log('API URL:', process.env.GEMINI_API_URL);
-
-    // Отправляем запрос к Google Gemini API
-    const geminiApiUrl = process.env.GEMINI_API_URL;
-    const geminiApiKey = process.env.GEMINI_API_KEY;
-    
-    const requestPayload = {
-      contents: [{
-        parts: [{
-          text: prompt
-        }]
-      }],
-      generationConfig: {
-        temperature: 0.3,
-        topP: 0.95,
-        maxOutputTokens: 300
-      }
-    };
-
-    console.log('Request payload:', JSON.stringify(requestPayload, null, 2));
-
-    const geminiResponse = await fetch(`${geminiApiUrl}?key=${geminiApiKey}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(requestPayload),
-    });
-
-    console.log('Google Gemini API response status:', geminiResponse.status);
-    console.log('Google Gemini API response headers:', Object.fromEntries(geminiResponse.headers.entries()));
-
-    if (!geminiResponse.ok) {
-      let errorData;
-      try {
-        const errorText = await geminiResponse.text();
-        console.log('Error response text:', errorText);
-        try {
-          errorData = JSON.parse(errorText);
-        } catch {
-          errorData = { error: errorText };
-        }
-      } catch {
-        errorData = { error: 'Failed to read error response' };
-      }
-      console.error('Google Gemini API error:', errorData);
+      console.log(`Отправляем запрос к AI провайдеру: ${geminiApi.getCurrentProvider()}`);
       
-      // Fallback анализ без AI
+      const analysis = await geminiApi.generateContent(prompt, {
+        temperature: 0.3,
+        maxOutputTokens: 2000
+      });
+
+      console.log('AI Analysis result:', analysis);
+
+      return NextResponse.json({ 
+        analysis,
+        provider: geminiApi.getCurrentProvider()
+      });
+
+    } catch (aiError) {
+      console.error('AI provider error:', aiError);
+      
+      // Fallback анализ при ошибке AI
       const fallbackAnalysis = generateFallbackAnalysis(actualResponse, expectedResponse, httpStatus);
       return NextResponse.json({ 
         analysis: fallbackAnalysis,
         fallback: true,
-        error: `AI API ошибка: ${geminiResponse.status} ${geminiResponse.statusText} - ${JSON.stringify(errorData)}`
+        error: `Ошибка AI провайдера (${aiProvider}): ${aiError instanceof Error ? aiError.message : 'Неизвестная ошибка'}`
       });
     }
-
-    const responseText = await geminiResponse.text();
-    console.log('Google Gemini API response text:', responseText);
-    
-    let data;
-    try {
-      data = JSON.parse(responseText);
-    } catch (parseError) {
-      console.error('Failed to parse AI response:', parseError);
-      const fallbackAnalysis = generateFallbackAnalysis(actualResponse, expectedResponse, httpStatus);
-      return NextResponse.json({ 
-        analysis: fallbackAnalysis,
-        fallback: true,
-        error: 'Не удалось распарсить ответ AI'
-      });
-    }
-
-    console.log('Google Gemini API response data:', data);
-
-    const analysis = data.candidates?.[0]?.content?.parts?.[0]?.text || 'Не удалось проанализировать ответ';
-
-    console.log('AI Analysis result:', analysis);
-
-    return NextResponse.json({ analysis });
 
   } catch (error) {
     console.error('Error analyzing response:', error);
     
-    // Fallback анализ при ошибке
+    // Fallback анализ при общей ошибке
     const fallbackAnalysis = generateFallbackAnalysis(
       requestBody?.actualResponse || null,
       requestBody?.expectedResponse || null,
       requestBody?.httpStatus || null
     );
     
+    // Проверяем специфичные ошибки
+    let errorMessage = 'Ошибка AI анализа';
+    if (error instanceof Error) {
+      if (error.name === 'AbortError') {
+        errorMessage = 'Превышено время ожидания ответа от AI (30 сек)';
+      } else if (error.message.includes('fetch failed')) {
+        errorMessage = 'Ошибка подключения к AI API';
+      } else {
+        errorMessage = `Ошибка AI анализа: ${error.message}`;
+      }
+    }
+    
     return NextResponse.json({ 
       analysis: fallbackAnalysis,
       fallback: true,
-      error: `Ошибка AI анализа: ${error instanceof Error ? error.message : 'Неизвестная ошибка'}`
+      error: errorMessage
     });
   }
 }

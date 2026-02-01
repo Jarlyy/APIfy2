@@ -10,6 +10,7 @@ interface AiAnalysisProps {
   apiUrl?: string;
   httpMethod?: string;
   httpStatus?: number;
+  aiProvider?: 'gemini' | 'huggingface';
   onAnalysisComplete?: (analysis: string) => void;
 }
 
@@ -20,6 +21,7 @@ export default function AiAnalysis({
   apiUrl,
   httpMethod,
   httpStatus,
+  aiProvider = 'huggingface',
   onAnalysisComplete
 }: AiAnalysisProps) {
   const [analysis, setAnalysis] = useState<string>('');
@@ -47,7 +49,8 @@ export default function AiAnalysis({
         testName,
         apiUrl,
         httpMethod,
-        httpStatus
+        httpStatus,
+        aiProvider
       });
 
       setAnalysis(result.analysis);
@@ -104,7 +107,7 @@ export default function AiAnalysis({
     <div className="rounded-md border border-blue-200 bg-blue-50 p-3 dark:border-blue-800 dark:bg-blue-900/20">
       <div className="flex items-center justify-between mb-2">
         <h4 className="text-sm font-medium text-blue-900 dark:text-blue-100 flex items-center gap-2">
-          🤖 AI Анализ ответа
+          🤖 AI Анализ ответа ({aiProvider === 'gemini' ? 'Gemini' : 'GPT OSS 120B'})
           {loading && (
             <div className="animate-spin h-3 w-3 border border-blue-600 border-t-transparent rounded-full"></div>
           )}

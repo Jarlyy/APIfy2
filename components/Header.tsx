@@ -3,14 +3,32 @@
 import Link from 'next/link'
 import { useAuth } from '@/hooks/useAuth'
 import { createClient } from '@/lib/supabase/client'
+import { useSearchParams } from 'next/navigation'
 
-export default function Header() {
+interface HeaderProps {
+  activeTab?: string
+  onTabChange?: (tab: string) => void
+}
+
+export default function Header({ activeTab = 'testing', onTabChange }: HeaderProps) {
   const { user, loading } = useAuth()
+  const searchParams = useSearchParams()
+  const currentTab = searchParams.get('tab') || activeTab
 
   const handleSignOut = async () => {
     const supabase = createClient()
     await supabase.auth.signOut()
     window.location.href = '/login'
+  }
+
+  const handleTabClick = (tab: string) => {
+    if (onTabChange) {
+      onTabChange(tab)
+    }
+    // Обновляем URL без перезагрузки страницы
+    const url = new URL(window.location.href)
+    url.searchParams.set('tab', tab)
+    window.history.pushState({}, '', url.toString())
   }
   return (
     <header className="border-b border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-800">
@@ -21,36 +39,56 @@ export default function Header() {
               APIfy
             </Link>
             <nav className="flex gap-4">
-              <Link
-                href="/dashboard"
-                className="text-sm font-medium text-zinc-700 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-white"
+              <button
+                onClick={() => handleTabClick('testing')}
+                className={`text-sm font-medium transition-colors ${
+                  currentTab === 'testing'
+                    ? 'text-zinc-900 dark:text-white border-b-2 border-blue-500'
+                    : 'text-zinc-700 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-white'
+                }`}
               >
                 Тестирование
-              </Link>
-              <Link
-                href="/favorites"
-                className="text-sm font-medium text-zinc-700 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-white"
+              </button>
+              <button
+                onClick={() => handleTabClick('favorites')}
+                className={`text-sm font-medium transition-colors ${
+                  currentTab === 'favorites'
+                    ? 'text-zinc-900 dark:text-white border-b-2 border-blue-500'
+                    : 'text-zinc-700 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-white'
+                }`}
               >
                 Избранное
-              </Link>
-              <Link
-                href="/import"
-                className="text-sm font-medium text-zinc-700 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-white"
+              </button>
+              <button
+                onClick={() => handleTabClick('import')}
+                className={`text-sm font-medium transition-colors ${
+                  currentTab === 'import'
+                    ? 'text-zinc-900 dark:text-white border-b-2 border-blue-500'
+                    : 'text-zinc-700 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-white'
+                }`}
               >
                 Импорт API
-              </Link>
-              <Link
-                href="/analytics"
-                className="text-sm font-medium text-zinc-700 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-white"
+              </button>
+              <button
+                onClick={() => handleTabClick('analytics')}
+                className={`text-sm font-medium transition-colors ${
+                  currentTab === 'analytics'
+                    ? 'text-zinc-900 dark:text-white border-b-2 border-blue-500'
+                    : 'text-zinc-700 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-white'
+                }`}
               >
                 Аналитика
-              </Link>
-              <Link
-                href="/history"
-                className="text-sm font-medium text-zinc-700 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-white"
+              </button>
+              <button
+                onClick={() => handleTabClick('history')}
+                className={`text-sm font-medium transition-colors ${
+                  currentTab === 'history'
+                    ? 'text-zinc-900 dark:text-white border-b-2 border-blue-500'
+                    : 'text-zinc-700 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-white'
+                }`}
               >
                 История
-              </Link>
+              </button>
             </nav>
           </div>
 

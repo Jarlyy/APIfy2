@@ -1,3 +1,5 @@
+import { AIProvider, AIProviderFactory, AIGenerationOptions } from './ai-providers';
+
 interface GeminiContent {
   parts: Array<{
     text: string;
@@ -30,350 +32,168 @@ interface GeminiResponse {
 }
 
 export class GeminiAPI {
-  private apiKey: string;
-  private baseUrl: string;
+  private provider: AIProvider;
 
-  constructor() {
-    this.apiKey = process.env.GEMINI_API_KEY || '';
-    this.baseUrl = process.env.GEMINI_API_URL || 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent';
+  constructor(providerType?: 'gemini' | 'huggingface') {
+    const defaultProvider = (process.env.DEFAULT_AI_PROVIDER as 'gemini' | 'huggingface') || 'huggingface';
+    this.provider = AIProviderFactory.createProvider(providerType || defaultProvider);
     
-    console.log('GeminiAPI инициализация:', {
-      hasApiKey: !!this.apiKey,
-      apiKeyLength: this.apiKey.length,
-      baseUrl: this.baseUrl
+    console.log('GeminiAPI инициализация с провайдером:', this.provider.name);
+  }
+
+  // Переключение провайдера
+  switchProvider(providerType: 'gemini' | 'huggingface') {
+    this.provider = AIProviderFactory.createProvider(providerType);
+    console.log('Переключен на провайдер:', this.provider.name);
+  }
+
+  // Получение текущего провайдера
+  getCurrentProvider(): string {
+    return this.provider.name;
+  }
+
+  async generateContent(prompt: string, options?: AIGenerationOptions): Promise<string> {
+    console.log('Отправляю запрос к AI провайдеру:', {
+      provider: this.provider.name,
+      promptLength: prompt.length
     });
-    
-    if (!this.apiKey) {
-      throw new Error('GEMINI_API_KEY не найден в переменных окружения');
-    }
-  }
 
-  async generateContent(prompt: string, options?: {
-    temperature?: number;
-    topP?: number;
-    maxOutputTokens?: number;
-  }): Promise<string> {
-    const request: GeminiRequest = {
-      contents: [{
-        parts: [{
-          text: prompt
-        }]
-      }],
-      generationConfig: {
-        temperature: options?.temperature || 0.3,
-        topP: options?.topP || 0.95,
-        maxOutputTokens: options?.maxOutputTokens || 1000
-      }
-    };
-
-    try {
-      console.log('Отправляю запрос к Gemini API:', {
-        url: this.baseUrl,
-        promptLength: prompt.length
-      });
-
-      const response = await fetch(`${this.baseUrl}?key=${this.apiKey}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(request),
-      });
-
-      console.log('Ответ от Gemini API:', {
-        status: response.status,
-        ok: response.ok
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Ошибка Gemini API:', errorText);
-        
-        let errorData;
-        try {
-          errorData = JSON.parse(errorText);
-        } catch (e) {
-          errorData = { error: { message: errorText } };
-        }
-        
-        // Проверяем специфичные ошибки
-        if (response.status === 429) {
-          console.log('Лимит запросов превышен, возвращаю демо-ответ');
-          return this.getDemoResponse(prompt);
-        }
-        
-        if (response.status === 400 && errorData.error?.message?.includes('User location is not supported')) {
-          console.log('Регион не поддерживается, возвращаю демо-ответ');
-          return this.getDemoResponse(prompt);
-        }
-        
-        if (response.status === 404 && errorData.error?.message?.includes('not found')) {
-          console.log('Модель не найдена, возвращаю демо-ответ');
-          return this.getDemoResponse(prompt);
-        }
-        
-        throw new Error(`Gemini API ошибка: ${response.status} ${response.statusText}`);
-      }
-
-      const data: GeminiResponse = await response.json();
-      console.log('Данные от Gemini API получены');
-
-      const content = data.candidates?.[0]?.content?.parts?.[0]?.text;
-      if (!content) {
-        throw new Error('Пустой ответ от Gemini API');
-      }
-
-      return content;
-    } catch (error) {
-      console.error('Ошибка при запросе к Gemini API:', error);
-      
-      // В случае ошибки возвращаем демо-ответ
-      console.log('Возвращаю демо-ответ из-за ошибки');
-      return this.getDemoResponse(prompt);
-    }
-  }
-
-  private getDemoResponse(prompt: string): string {
-    const isExecutableTests = prompt.includes('generateExecutableTests') || prompt.includes('ТОЛЬКО JSON массив');
-    const isTestGeneration = prompt.includes('готовых тестов') || prompt.includes('формате JSON');
-    
-    if (isExecutableTests) {
-      // Более разнообразные демо-тесты
-      const demoTests = [
-        {
-          "id": "demo-1",
-          "name": "Получение списка пользователей",
-          "url": "https://jsonplaceholder.typicode.com/users",
-          "method": "GET",
-          "headers": {},
-          "body": "",
-          "auth_type": "none",
-          "auth_token": "",
-          "expected_status": 200,
-          "expected_response": "Массив пользователей"
-        },
-        {
-          "id": "demo-2", 
-          "name": "Получение пользователя по ID",
-          "url": "https://jsonplaceholder.typicode.com/users/1",
-          "method": "GET",
-          "headers": {},
-          "body": "",
-          "auth_type": "none",
-          "auth_token": "",
-          "expected_status": 200,
-          "expected_response": "Объект пользователя"
-        },
-        {
-          "id": "demo-3",
-          "name": "Создание нового поста",
-          "url": "https://jsonplaceholder.typicode.com/posts",
-          "method": "POST",
-          "headers": {"Content-Type": "application/json"},
-          "body": JSON.stringify({
-            "title": "Тестовый пост",
-            "body": "Содержимое поста",
-            "userId": 1
-          }),
-          "auth_type": "none",
-          "auth_token": "",
-          "expected_status": 201,
-          "expected_response": "Созданный пост с ID"
-        },
-        {
-          "id": "demo-4",
-          "name": "Обновление поста",
-          "url": "https://jsonplaceholder.typicode.com/posts/1",
-          "method": "PUT",
-          "headers": {"Content-Type": "application/json"},
-          "body": JSON.stringify({
-            "id": 1,
-            "title": "Обновленный пост",
-            "body": "Новое содержимое",
-            "userId": 1
-          }),
-          "auth_type": "none",
-          "auth_token": "",
-          "expected_status": 200,
-          "expected_response": "Обновленный пост"
-        },
-        {
-          "id": "demo-5",
-          "name": "Удаление поста",
-          "url": "https://jsonplaceholder.typicode.com/posts/1",
-          "method": "DELETE",
-          "headers": {},
-          "body": "",
-          "auth_type": "none",
-          "auth_token": "",
-          "expected_status": 200,
-          "expected_response": "Пустой объект"
-        }
-      ];
-      
-      return JSON.stringify(demoTests, null, 2);
-    }
-    
-    if (isTestGeneration) {
-      return `Вот готовые тесты для API:
-
-\`\`\`json
-[
-  {
-    "name": "Получение списка постов",
-    "url": "https://jsonplaceholder.typicode.com/posts",
-    "method": "GET",
-    "description": "Получает все посты"
-  },
-  {
-    "name": "Создание нового поста",
-    "url": "https://jsonplaceholder.typicode.com/posts",
-    "method": "POST",
-    "description": "Создает новый пост"
-  },
-  {
-    "name": "Получение комментариев",
-    "url": "https://jsonplaceholder.typicode.com/comments",
-    "method": "GET",
-    "description": "Получает все комментарии"
-  }
-]
-\`\`\``;
-    }
-    
-    return "🤖 Демо-ответ от Gemini API.\n\n⚠️ Google AI Studio API недоступен в вашем регионе или возникла ошибка подключения.\n\nСистема работает в демо-режиме с готовыми тестами для популярных API сервисов.\n\nДля полноценной работы рекомендуется:\n1. Использовать VPN для доступа к поддерживаемым регионам\n2. Проверить актуальность API ключа\n3. Использовать альтернативные AI сервисы (OpenAI, Anthropic)";
+    return await this.provider.generateContent(prompt, options);
   }
 
   // Анализ API сервиса
   async analyzeAPI(serviceName: string): Promise<string> {
-    const prompt = `Проанализируй API сервис "${serviceName}" и предоставь информацию о:
-
-1. Основные эндпоинты и их назначение
-2. Методы аутентификации
-3. Формат данных (JSON, XML и т.д.)
-4. Основные возможности API
-5. Примеры использования
-
-Ответь на русском языке в структурированном формате.`;
+    const prompt = [
+      `Проанализируй API сервис "${serviceName}" и предоставь информацию о:`,
+      '',
+      '1. Основные эндпоинты и их назначение',
+      '2. Методы аутентификации',
+      '3. Формат данных (JSON, XML и т.д.)',
+      '4. Основные возможности API',
+      '5. Примеры использования',
+      '',
+      'Ответь на русском языке в структурированном формате.'
+    ].join('\n');
 
     return await this.generateContent(prompt, { temperature: 0.3 });
   }
 
   // Генерация готовых тестов
   async generateReadyTests(serviceName: string): Promise<string> {
-    const prompt = `Создай готовые тесты для API сервиса "${serviceName}".
-
-Требования:
-- Создай 3-5 реалистичных тестов
-- Включи разные HTTP методы (GET, POST, PUT, DELETE)
-- Добавь описание каждого теста
-- Используй реальные URL если знаешь, или создай правдоподобные
-- Ответь в формате JSON массива
-
-Формат ответа:
-\`\`\`json
-[
-  {
-    "name": "Название теста",
-    "url": "https://api.example.com/endpoint",
-    "method": "GET",
-    "description": "Описание теста"
-  }
-]
-\`\`\``;
+    const prompt = [
+      `Создай готовые тесты для API сервиса "${serviceName}".`,
+      '',
+      'Требования:',
+      '- Создай 3-5 реалистичных тестов',
+      '- Включи разные HTTP методы (GET, POST, PUT, DELETE)',
+      '- Добавь описание каждого теста',
+      '- Используй только реальные URL',
+      '- Ответь в формате JSON массива',
+      '',
+      'Формат ответа:',
+      '[',
+      '  {',
+      '    "name": "Название теста",',
+      '    "url": "https://api.example.com/endpoint",',
+      '    "method": "GET",',
+      '    "description": "Описание теста"',
+      '  }',
+      ']'
+    ].join('\n');
 
     return await this.generateContent(prompt, { temperature: 0.4 });
   }
 
   // Генерация исполняемых тестов
   async generateExecutableTests(serviceName: string): Promise<string> {
-    const prompt = `Создай исполняемые тесты для API сервиса "${serviceName}".
+    const prompt = [
+      `Создай исполняемые тесты для API сервиса "${serviceName}".`,
+      '',
+      'КРИТИЧЕСКИ ВАЖНО:',
+      '1. Ответь ТОЛЬКО валидным JSON массивом',
+      '2. НЕ используй markdown блоки',
+      '3. НЕ добавляй никакого текста до или после JSON',
+      '4. Убедись что все строки правильно закрыты кавычками',
+      '5. Не используй переносы строк внутри строковых значений',
+      '6. ИСПОЛЬЗУЙ ТОЛЬКО РЕАЛЬНЫЕ, СУЩЕСТВУЮЩИЕ API URL',
+      '7. НЕ ИСПОЛЬЗУЙ api.example.com или любые другие примеры',
+      '8. НЕ ПРИДУМЫВАЙ несуществующие домены',
+      '9. Если не знаешь реальный URL - НЕ ГЕНЕРИРУЙ тест для этого API',
+      '',
+      'Создай 3-5 тестов ТОЛЬКО для тех API, реальные URL которых ты точно знаешь:',
+      '- id: уникальный идентификатор (строка)',
+      '- name: название теста (строка, максимум 50 символов)',
+      '- url: ТОЛЬКО реальный, существующий URL (строка)',
+      '- method: HTTP метод (GET/POST/PUT/DELETE)',
+      '- headers: объект заголовков (объект)',
+      '- body: тело запроса (строка, может быть пустой)',
+      '- auth_type: тип аутентификации ("none", "bearer", "api-key", "basic")',
+      '- auth_token: токен (строка, может быть пустой)',
+      '- expected_status: HTTP статус (число)',
+      '- expected_response: краткое описание (строка, максимум 40 символов)',
+      '',
+      'Начинай ответ сразу с [ и заканчивай ]'
+    ].join('\n');
 
-ВАЖНО: Ответь ТОЛЬКО JSON массивом без дополнительного текста!
-
-Создай 3-5 реалистичных тестов со всеми необходимыми полями:
-- id: уникальный идентификатор
-- name: название теста
-- url: полный URL эндпоинта
-- method: HTTP метод
-- headers: объект заголовков
-- body: тело запроса (строка)
-- auth_type: тип аутентификации ("none", "bearer", "api-key", "basic")
-- auth_token: токен аутентификации
-- expected_status: ожидаемый HTTP статус
-- expected_response: описание ожидаемого ответа
-
-Используй реальные API если знаешь (например, JSONPlaceholder, GitHub API, OpenWeather), или создай правдоподобные.
-
-Пример формата:
-[
-  {
-    "id": "test-1",
-    "name": "Получение списка пользователей",
-    "url": "https://jsonplaceholder.typicode.com/users",
-    "method": "GET",
-    "headers": {},
-    "body": "",
-    "auth_type": "none",
-    "auth_token": "",
-    "expected_status": 200,
-    "expected_response": "Массив пользователей"
-  }
-]`;
-
-    return await this.generateContent(prompt, { temperature: 0.3, maxOutputTokens: 2000 });
+    return await this.generateContent(prompt, { temperature: 0.2, maxOutputTokens: 4000 });
   }
 
   // Генерация тестовых сценариев
   async generateTestScenarios(apiDoc: string): Promise<string> {
-    const prompt = `На основе документации API создай тестовые сценарии:
-
-${apiDoc}
-
-Создай:
-1. Позитивные тесты (успешные сценарии)
-2. Негативные тесты (ошибки, граничные случаи)
-3. Тесты безопасности
-4. Тесты производительности
-
-Ответь в структурированном формате на русском языке.`;
+    const prompt = [
+      'На основе документации API создай тестовые сценарии:',
+      '',
+      apiDoc,
+      '',
+      'Создай:',
+      '1. Позитивные тесты (успешные сценарии)',
+      '2. Негативные тесты (ошибки, граничные случаи)',
+      '3. Тесты безопасности',
+      '4. Тесты производительности',
+      '',
+      'Ответь в структурированном формате на русском языке.'
+    ].join('\n');
 
     return await this.generateContent(prompt, { temperature: 0.4 });
   }
 
   // Извлечение примеров из документации
   async extractExamples(apiDoc: string): Promise<string> {
-    const prompt = `Извлеки примеры API запросов из документации:
-
-${apiDoc}
-
-Найди и структурируй:
-1. Примеры запросов
-2. Примеры ответов
-3. Параметры запросов
-4. Коды ошибок
-
-Представь в удобном для тестирования формате.`;
+    const prompt = [
+      'Извлеки примеры API запросов из документации:',
+      '',
+      apiDoc,
+      '',
+      'Найди и структурируй:',
+      '1. Примеры запросов',
+      '2. Примеры ответов',
+      '3. Параметры запросов',
+      '4. Коды ошибок',
+      '',
+      'Представь в удобном для тестирования формате.'
+    ].join('\n');
 
     return await this.generateContent(prompt, { temperature: 0.2 });
   }
 
   // Валидация результатов тестов
   async validateTestResult(test: any, result: any): Promise<string> {
-    const prompt = `Проанализируй результат выполнения теста:
-
-ТЕСТ:
-${JSON.stringify(test, null, 2)}
-
-РЕЗУЛЬТАТ:
-${JSON.stringify(result, null, 2)}
-
-Оцени:
-1. Соответствует ли результат ожиданиям?
-2. Есть ли ошибки или проблемы?
-3. Рекомендации по улучшению
-
-Ответь кратко на русском языке.`;
+    const prompt = [
+      'Проанализируй результат выполнения теста:',
+      '',
+      'ТЕСТ:',
+      JSON.stringify(test, null, 2),
+      '',
+      'РЕЗУЛЬТАТ:',
+      JSON.stringify(result, null, 2),
+      '',
+      'Оцени:',
+      '1. Соответствует ли результат ожиданиям?',
+      '2. Есть ли ошибки или проблемы?',
+      '3. Рекомендации по улучшению',
+      '',
+      'Ответь кратко на русском языке.'
+    ].join('\n');
 
     return await this.generateContent(prompt, { temperature: 0.3 });
   }

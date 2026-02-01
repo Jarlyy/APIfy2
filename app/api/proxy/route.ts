@@ -58,6 +58,9 @@ async function handleProxyRequest(request: NextRequest, method: string) {
 
     // Принудительно отключаем сжатие
     headers['accept-encoding'] = 'identity';
+    
+    // Добавляем User-Agent для лучшей совместимости
+    headers['user-agent'] = 'APIfy-Proxy/1.0';
 
     // Получаем тело запроса если есть
     let body: string | undefined;
@@ -69,54 +72,84 @@ async function handleProxyRequest(request: NextRequest, method: string) {
       }
     }
 
-    // Выполняем запрос к целевому API
-    const response = await fetch(targetUrl, {
-      method,
-      headers,
-      body,
-    });
+    // Создаем контроллер для таймаута (8 секунд для Vercel)
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8000);
 
-    // Получаем данные ответа
-    const contentType = response.headers.get('content-type');
-    let data;
-    
     try {
-      if (contentType?.includes('application/json')) {
-        // Пытаемся парсить как JSON
-        const text = await response.text();
-        try {
-          data = JSON.parse(text);
-        } catch (jsonError) {
-          // Если не удалось парсить JSON, возвращаем как текст
-          console.warn('Failed to parse JSON, returning as text:', jsonError);
-          data = text;
-        }
-      } else {
-        // Для не-JSON контента возвращаем как текст
-        data = await response.text();
-      }
-    } catch (readError) {
-      console.error('Error reading response:', readError);
-      data = `Error reading response: ${readError}`;
-    }
+      // Выполняем запрос к целевому API
+      const response = await fetch(targetUrl, {
+        method,
+        headers,
+        body,
+        signal: controller.signal,
+      });
 
-    // Возвращаем ответ с CORS заголовками
-    return NextResponse.json(
-      {
-        status: response.status,
-        statusText: response.statusText,
-        data,
-        headers: Object.fromEntries(response.headers.entries()),
-      },
-      {
-        status: 200,
-        headers: {
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, PATCH, OPTIONS',
-          'Access-Control-Allow-Headers': '*',
-        },
+      clearTimeout(timeoutId);
+
+      // Получаем данные ответа
+      const contentType = response.headers.get('content-type');
+      let data;
+      
+      try {
+        if (contentType?.includes('application/json')) {
+          // Пытаемся парсить как JSON
+          const text = await response.text();
+          try {
+            data = JSON.parse(text);
+          } catch (jsonError) {
+            // Если не удалось парсить JSON, возвращаем как текст
+            console.warn('Failed to parse JSON, returning as text:', jsonError);
+            data = text;
+          }
+        } else {
+          // Для не-JSON контента возвращаем как текст
+          data = await response.text();
+        }
+      } catch (readError) {
+        console.error('Error reading response:', readError);
+        data = `Error reading response: ${readError}`;
       }
-    );
+
+      // Возвращаем ответ с CORS заголовками
+      return NextResponse.json(
+        {
+          status: response.status,
+          statusText: response.statusText,
+          data,
+          headers: Object.fromEntries(response.headers.entries()),
+        },
+        {
+          status: 200,
+          headers: {
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, PATCH, OPTIONS',
+            'Access-Control-Allow-Headers': '*',
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+          },
+        }
+      );
+
+    } catch (fetchError) {
+      clearTimeout(timeoutId);
+      
+      if (fetchError instanceof Error && fetchError.name === 'AbortError') {
+        return NextResponse.json(
+          { 
+            error: 'Превышено время ожидания ответа (8 сек)',
+            timeout: true
+          },
+          { 
+            status: 408,
+            headers: {
+              'Access-Control-Allow-Origin': '*',
+            },
+          }
+        );
+      }
+      
+      throw fetchError;
+    }
 
   } catch (error) {
     console.error('Proxy error:', error);

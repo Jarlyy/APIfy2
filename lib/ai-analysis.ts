@@ -7,6 +7,7 @@ export interface AnalysisRequest {
   apiUrl?: string;
   httpMethod?: string;
   httpStatus?: number;
+  aiProvider?: 'gemini' | 'huggingface';
 }
 
 export interface AnalysisResult {
@@ -120,8 +121,9 @@ function generateSimpleAnalysis(request: AnalysisRequest): string {
 
 // Проверка доступности AI анализа
 export function isAiAnalysisEnabled(): boolean {
-  return typeof window !== 'undefined' && 
-         localStorage.getItem('aiAnalysisEnabled') !== 'false';
+  if (typeof window === 'undefined') return true; // По умолчанию включен на сервере
+  const stored = localStorage.getItem('aiAnalysisEnabled');
+  return stored === null ? true : stored === 'true'; // По умолчанию включен
 }
 
 // Включение/выключение AI анализа

@@ -48,6 +48,12 @@ export async function POST(request: NextRequest) {
             { status: 400 }
           );
         }
+        
+        // Переключаем провайдер если указан
+        if (data.aiProvider) {
+          gemini.switchProvider(data.aiProvider);
+        }
+        
         result = await gemini.generateExecutableTests(data.serviceName);
         break;
 
