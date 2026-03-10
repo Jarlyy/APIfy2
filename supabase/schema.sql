@@ -45,17 +45,61 @@ CREATE TABLE IF NOT EXISTS public.api_documentation (
   last_scanned TIMESTAMPTZ
 );
 
+-- Unified runtime history table (used by frontend code)
+CREATE TABLE IF NOT EXISTS public.api_test_history (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+  service_name TEXT NOT NULL,
+  test_name TEXT,
+  url TEXT NOT NULL,
+  method TEXT NOT NULL,
+  headers JSONB,
+  body TEXT,
+  auth_type TEXT,
+  auth_token TEXT,
+  status_code INTEGER,
+  response_data JSONB,
+  response_time INTEGER,
+  error_message TEXT,
+  test_status TEXT CHECK (test_status IN ('success', 'error', 'pending')) DEFAULT 'pending',
+  ai_provider TEXT CHECK (ai_provider IN ('gemini', 'huggingface')),
+  ai_analysis TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Favorites table (used by frontend code)
+CREATE TABLE IF NOT EXISTS public.favorites (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+  service_name TEXT NOT NULL,
+  url TEXT NOT NULL,
+  method TEXT NOT NULL,
+  headers JSONB,
+  body TEXT,
+  auth_type TEXT,
+  auth_token TEXT,
+  ai_provider TEXT CHECK (ai_provider IN ('gemini', 'huggingface')),
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE (user_id, url, method)
+);
+
 -- Indexes for better performance
 CREATE INDEX IF NOT EXISTS idx_api_tests_user_id ON public.api_tests(user_id);
 CREATE INDEX IF NOT EXISTS idx_api_tests_created_at ON public.api_tests(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_test_history_test_id ON public.test_history(test_id);
 CREATE INDEX IF NOT EXISTS idx_test_history_user_id ON public.test_history(user_id);
+CREATE INDEX IF NOT EXISTS idx_api_test_history_user_id ON public.api_test_history(user_id);
+CREATE INDEX IF NOT EXISTS idx_api_test_history_created_at ON public.api_test_history(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_favorites_user_id ON public.favorites(user_id);
 
 -- Row Level Security (RLS) policies
 ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.api_tests ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.test_history ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.api_documentation ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.api_test_history ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.favorites ENABLE ROW LEVEL SECURITY;
 
 -- Users policies (optimized with select auth.uid())
 CREATE POLICY "Users can view own profile" ON public.users
@@ -88,6 +132,32 @@ CREATE POLICY "Users can create own test history" ON public.test_history
 CREATE POLICY "Anyone can view API documentation" ON public.api_documentation
   FOR SELECT USING (true);
 
+-- API test history policies
+CREATE POLICY "Users can view own api test history" ON public.api_test_history
+  FOR SELECT USING ((select auth.uid()) = user_id);
+
+CREATE POLICY "Users can create own api test history" ON public.api_test_history
+  FOR INSERT WITH CHECK ((select auth.uid()) = user_id);
+
+CREATE POLICY "Users can update own api test history" ON public.api_test_history
+  FOR UPDATE USING ((select auth.uid()) = user_id);
+
+CREATE POLICY "Users can delete own api test history" ON public.api_test_history
+  FOR DELETE USING ((select auth.uid()) = user_id);
+
+-- Favorites policies
+CREATE POLICY "Users can view own favorites" ON public.favorites
+  FOR SELECT USING ((select auth.uid()) = user_id);
+
+CREATE POLICY "Users can create own favorites" ON public.favorites
+  FOR INSERT WITH CHECK ((select auth.uid()) = user_id);
+
+CREATE POLICY "Users can update own favorites" ON public.favorites
+  FOR UPDATE USING ((select auth.uid()) = user_id);
+
+CREATE POLICY "Users can delete own favorites" ON public.favorites
+  FOR DELETE USING ((select auth.uid()) = user_id);
+
 -- Function to automatically create user profile on signup (with search_path for security)
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
@@ -118,4 +188,7 @@ CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON public.users
   FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 
 CREATE TRIGGER update_api_tests_updated_at BEFORE UPDATE ON public.api_tests
+  FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+
+CREATE TRIGGER update_api_test_history_updated_at BEFORE UPDATE ON public.api_test_history
   FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
