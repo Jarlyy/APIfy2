@@ -6,6 +6,7 @@ import { UnifiedApiTester } from './UnifiedApiTester'
 import OpenApiImport from './OpenApiImport'
 import HistoryTab from './HistoryTab'
 import FavoritesTab from './FavoritesTab'
+import AnalyticsTab from './AnalyticsTab'
 
 interface MainWorkspaceProps {
   userId: string
@@ -63,10 +64,7 @@ export default function MainWorkspace({ userId, initialTab = 'testing', activeTa
 
       {/* Аналитика */}
       <div className={`${currentTab !== 'analytics' ? 'hidden' : ''}`}>
-        <div className="text-center py-12">
-          <h3 className="text-lg font-semibold mb-2">Аналитика тестов</h3>
-          <p className="text-muted-foreground">Здесь будет отображаться статистика ваших API тестов</p>
-        </div>
+        <AnalyticsTab />
       </div>
 
       {/* История */}
