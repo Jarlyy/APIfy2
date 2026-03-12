@@ -10,11 +10,12 @@
 - AGENTS requests `bun`/`biome`, while repo/runtime workflow currently uses `pnpm` and ESLint.
 
 ## Changelog
+- 2026-03-12: Vercel Hobby cron compatibility fix (daily schedule + daily default monitoring interval).
 - 2026-03-12: Memory Bank re-synced to current repository state after restoring AGENTS-defined structure.
 - 2026-03-12: `activeContext.md` updated with current focus and decisions.
 - 2026-03-12: `techContext.md` updated to reflect effective toolchain and constraints.
 - 2026-03-12: `systemPatterns.md` updated with monitoring/alerts architecture notes.
 
 ## Change Control
-- last_checked_commit: `4fe4a7722d5b9a19bbf090bb2b25265d0d83ddc8`
+- last_checked_commit: `808ed9bf092d300c8ab11df05aa230c7efc092f7`
 - checked_on: `2026-03-12`

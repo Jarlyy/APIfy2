@@ -18,7 +18,7 @@
 
 Пример:
 - путь: `/api/monitor/run`
-- период: `*/5 * * * *`
+- период: `0 3 * * *` (daily, compatible with Vercel Hobby)
 - заголовок: `Authorization: Bearer <MONITOR_CRON_SECRET>`
 
 ## Переменные окружения
@@ -37,3 +37,9 @@
 
 Для Slack (в `alert_channels.config`):
 - `webhookUrl`
+
+
+## Ограничение Vercel Hobby
+
+- На Hobby cron должен запускаться не чаще 1 раза в сутки.
+- Для частых проверок (каждые N минут/часов) нужен Pro-план.

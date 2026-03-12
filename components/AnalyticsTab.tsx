@@ -39,7 +39,7 @@ export default function AnalyticsTab() {
   const [creatingMonitor, setCreatingMonitor] = useState(false)
   const [selectedService, setSelectedService] = useState('all')
   const [selectedEndpoint, setSelectedEndpoint] = useState('all')
-  const [newMonitor, setNewMonitor] = useState({ name: '', url: '', interval_minutes: 5, sla_target: 99.9 })
+  const [newMonitor, setNewMonitor] = useState({ name: '', url: '', interval_minutes: 1440, sla_target: 99.9 })
 
   useEffect(() => {
     const load = async () => {
@@ -204,7 +204,7 @@ export default function AnalyticsTab() {
 
     if (result.success && result.data) {
       setMonitors(prev => [result.data!, ...prev])
-      setNewMonitor({ name: '', url: '', interval_minutes: 5, sla_target: 99.9 })
+      setNewMonitor({ name: '', url: '', interval_minutes: 1440, sla_target: 99.9 })
     }
 
     setCreatingMonitor(false)
@@ -246,15 +246,17 @@ export default function AnalyticsTab() {
             />
             <Input
               type="number"
-              min={1}
+              min={1440}
               value={newMonitor.interval_minutes}
-              onChange={(e) => setNewMonitor(prev => ({ ...prev, interval_minutes: Number(e.target.value || 5) }))}
+              onChange={(e) => setNewMonitor(prev => ({ ...prev, interval_minutes: Number(e.target.value || 1440) }))}
               placeholder="Интервал (мин)"
             />
             <Button onClick={handleCreateMonitor} disabled={creatingMonitor || !newMonitor.name || !newMonitor.url}>
               <PlusCircle className="mr-2 h-4 w-4" /> {creatingMonitor ? 'Создание...' : 'Добавить монитор'}
             </Button>
           </div>
+
+          <p className="text-xs text-muted-foreground">Для Vercel Hobby проверки запускаются 1 раз в день (cron daily). Для более частых проверок нужен Pro-план.</p>
 
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">

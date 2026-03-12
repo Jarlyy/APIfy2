@@ -94,7 +94,7 @@ CREATE TABLE IF NOT EXISTS public.monitor_configs (
   method TEXT NOT NULL DEFAULT 'GET',
   headers JSONB,
   body TEXT,
-  interval_minutes INTEGER NOT NULL DEFAULT 5 CHECK (interval_minutes >= 1),
+  interval_minutes INTEGER NOT NULL DEFAULT 1440 CHECK (interval_minutes >= 1),
   expected_status INTEGER NOT NULL DEFAULT 200,
   sla_target NUMERIC(5,2) NOT NULL DEFAULT 99.90,
   alert_on_failure BOOLEAN NOT NULL DEFAULT true,

@@ -62,7 +62,7 @@ export async function createMonitor(input: {
     name: input.name,
     url: input.url,
     method: input.method || 'GET',
-    interval_minutes: input.interval_minutes || 5,
+    interval_minutes: input.interval_minutes || 1440,
     expected_status: input.expected_status || 200,
     sla_target: input.sla_target || 99.9,
   }

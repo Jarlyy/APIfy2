@@ -7,7 +7,7 @@
   "crons": [
     {
       "path": "/api/monitor/run",
-      "schedule": "*/5 * * * *"
+      "schedule": "0 3 * * *"
     }
   ],
   "headers": [
