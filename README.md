@@ -131,3 +131,7 @@ For support and questions:
 - Create an issue on GitHub
 - Check the documentation in `/docs`
 - Review the setup guide in `SETUP.md`
+
+## 🧩 Codex Workflow Note
+
+If direct `git push` from Codex is blocked in your environment, create a PR via the Codex `make_pr` integration after committing changes. This preserves your patch and lets you merge from the repository UI without local push permissions.
