@@ -26,3 +26,9 @@ APIfy2 is a web application for interactive API testing, documentation-assisted 
 - `docs/prd.md`
 - `docs/development-plan.md`
 - `docs/AGENTS.md`
+
+
+## Recent Additions
+- Scheduled monitoring with cron runner and alert channels.
+- Uptime/SLA analytics extension in dashboard analytics tab.
+- Placeholder-aware execution flow for generated/manual tests.

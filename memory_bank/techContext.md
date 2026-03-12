@@ -1,33 +1,30 @@
 # Tech Context
 
 ## Stack
-- Framework: Next.js 16 (`next`)
-- UI: React 19, Tailwind CSS 4, Radix UI, Lucide
-- Language: TypeScript
-- Backend services: Supabase SSR and Supabase JS
-- Charts: Recharts
+- Next.js 16 + React 19 + TypeScript
+- Tailwind CSS + Radix UI + Lucide
+- Supabase (`@supabase/ssr`, `@supabase/supabase-js`)
+- Recharts for analytics charts
 
-## Repo and Tooling
-- Package manager in practice: `pnpm` (`pnpm-lock.yaml`, `packageManager` field)
-- Lint config present: `eslint.config.mjs`
-- Next config present: `next.config.ts`
-- Vercel deployment files present: `vercel.json`, `.vercelignore`
-- PostCSS config present: `postcss.config.mjs`
+## Operational Tooling (Effective)
+- Package manager currently used in this environment/repo: **pnpm**
+- Linting setup in repo: ESLint (`eslint.config.mjs`)
+- Type checking: `tsc --noEmit`
 
-## Important Paths
-- App routes: `app/`
-- Components: `components/`
-- Shared logic: `lib/`
-- Hooks: `hooks/`
-- Static assets: `public/`
-- Database schema: `supabase/schema.sql`
-- Project docs: `docs/`
+## Monitoring-Specific Tech
+- Cron entry in `vercel.json` for `/api/monitor/run`
+- Service-role client in `lib/supabase/admin.ts`
+- Alert integrations:
+  - Slack webhook
+  - Telegram Bot API
+  - Resend API (email)
 
-## Environment Expectations
-- Supabase environment variables are required for full functionality.
-- AI provider keys are required for AI-powered flows.
-- Vercel is the documented deployment target.
+## Env Variables (Critical)
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `MONITOR_CRON_SECRET` (recommended for cron endpoint auth)
+- Optional AI and alert provider keys/config values
 
-## Tooling Mismatches To Remember
-- `docs/AGENTS.md` asks to use `bun`, but repository metadata currently points to `pnpm`.
-- `docs/AGENTS.md` asks for linting with `biome`, but Biome is not listed in `package.json`.
+## Constraints
+- External font fetching (`next/font` + Google Fonts) may break build in restricted networks.
