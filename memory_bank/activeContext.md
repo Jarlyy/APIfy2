@@ -26,3 +26,5 @@ Synchronize Memory Bank with the current repository state after monitoring/analy
 - Fixed Vercel Hobby deployment issue by switching cron schedule to daily and setting monitoring default interval to 1440 minutes.
 
 - Added idempotent Supabase schema handling (DROP POLICY/TRIGGER IF EXISTS before CREATE) to avoid re-run failures.
+
+- Updated analytics UX: monitors are listed and selecting a monitor shows its chart/details; removed Hobby warning text from UI.

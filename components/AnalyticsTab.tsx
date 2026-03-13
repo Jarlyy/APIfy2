@@ -36,9 +36,12 @@ export default function AnalyticsTab() {
   const [history, setHistory] = useState<TestHistoryItem[]>([])
   const [monitorRuns, setMonitorRuns] = useState<MonitoringRun[]>([])
   const [monitors, setMonitors] = useState<MonitorConfig[]>([])
+  const [selectedMonitorId, setSelectedMonitorId] = useState<string | null>(null)
+
   const [creatingMonitor, setCreatingMonitor] = useState(false)
   const [monitorError, setMonitorError] = useState<string | null>(null)
   const [monitorSuccess, setMonitorSuccess] = useState<string | null>(null)
+
   const [selectedService, setSelectedService] = useState('all')
   const [selectedEndpoint, setSelectedEndpoint] = useState('all')
   const [newMonitor, setNewMonitor] = useState({ name: '', url: '', interval_minutes: 1440, sla_target: 99.9 })
@@ -53,13 +56,60 @@ export default function AnalyticsTab() {
       ])
 
       if (historyResult.success && historyResult.data) setHistory(historyResult.data)
-      if (monitorsResult.success && monitorsResult.data) setMonitors(monitorsResult.data)
+      if (monitorsResult.success && monitorsResult.data) {
+        setMonitors(monitorsResult.data)
+        if (monitorsResult.data.length > 0) {
+          setSelectedMonitorId(monitorsResult.data[0].id)
+        }
+      }
       if (runsResult.success && runsResult.data) setMonitorRuns(runsResult.data)
       setLoading(false)
     }
 
     load()
   }, [])
+
+  const selectedMonitor = useMemo(
+    () => monitors.find((m) => m.id === selectedMonitorId) ?? null,
+    [monitors, selectedMonitorId]
+  )
+
+  const selectedMonitorRuns = useMemo(
+    () => (selectedMonitorId ? monitorRuns.filter((run) => run.monitor_id === selectedMonitorId) : []),
+    [monitorRuns, selectedMonitorId]
+  )
+
+  const monitoringSummary = useMemo(() => {
+    const total = selectedMonitorRuns.length
+    const success = selectedMonitorRuns.filter((r) => r.success).length
+    const uptime = total ? Number(((success / total) * 100).toFixed(2)) : 0
+    const avgResponse = total
+      ? Math.round(selectedMonitorRuns.map((r) => r.response_time_ms || 0).reduce((acc, n) => acc + n, 0) / total)
+      : 0
+
+    return {
+      activeMonitors: monitors.filter((m) => m.active).length,
+      runsForMonitor: total,
+      uptime,
+      avgResponse,
+    }
+  }, [selectedMonitorRuns, monitors])
+
+  const uptimeByDay = useMemo(() => {
+    const grouped = new Map<string, { total: number; success: number }>()
+
+    selectedMonitorRuns.forEach((run) => {
+      const day = new Date(run.executed_at).toISOString().slice(0, 10)
+      if (!grouped.has(day)) grouped.set(day, { total: 0, success: 0 })
+      const d = grouped.get(day)!
+      d.total += 1
+      if (run.success) d.success += 1
+    })
+
+    return [...grouped.entries()]
+      .map(([day, value]) => ({ day, uptime: value.total ? Number(((value.success / value.total) * 100).toFixed(2)) : 0 }))
+      .sort((a, b) => a.day.localeCompare(b.day))
+  }, [selectedMonitorRuns])
 
   const serviceOptions = useMemo(() => {
     const counter = new Map<string, number>()
@@ -151,43 +201,6 @@ export default function AnalyticsTab() {
       .slice(0, 10)
   }, [filteredHistory, selectedService])
 
-  const uptimeByDay = useMemo(() => {
-    const grouped = new Map<string, { total: number; success: number }>()
-    const recent = monitorRuns.filter((run) => Date.now() - new Date(run.executed_at).getTime() <= 1000 * 60 * 60 * 24 * 14)
-
-    recent.forEach((run) => {
-      const day = new Date(run.executed_at).toISOString().slice(0, 10)
-      if (!grouped.has(day)) grouped.set(day, { total: 0, success: 0 })
-      const d = grouped.get(day)!
-      d.total += 1
-      if (run.success) d.success += 1
-    })
-
-    return [...grouped.entries()]
-      .map(([day, value]) => ({ day, uptime: value.total ? Number(((value.success / value.total) * 100).toFixed(2)) : 0 }))
-      .sort((a, b) => a.day.localeCompare(b.day))
-  }, [monitorRuns])
-
-  const monitoringSummary = useMemo(() => {
-    const total = monitorRuns.length
-    const success = monitorRuns.filter((r) => r.success).length
-    const uptime = total ? Number(((success / total) * 100).toFixed(2)) : 0
-    const avgResponse = total
-      ? Math.round(
-          monitorRuns
-            .map((r) => r.response_time_ms || 0)
-            .reduce((acc, n) => acc + n, 0) / total
-        )
-      : 0
-
-    return {
-      activeMonitors: monitors.filter((m) => m.active).length,
-      runsLastPeriod: total,
-      uptime,
-      avgResponse,
-    }
-  }, [monitorRuns, monitors])
-
   const resetFilters = () => {
     setSelectedService('all')
     setSelectedEndpoint('all')
@@ -209,6 +222,7 @@ export default function AnalyticsTab() {
 
     if (result.success && result.data) {
       setMonitors(prev => [result.data!, ...prev])
+      setSelectedMonitorId(result.data.id)
       setNewMonitor({ name: '', url: '', interval_minutes: 1440, sla_target: 99.9 })
       setMonitorSuccess('Монитор успешно создан.')
     } else {
@@ -234,13 +248,6 @@ export default function AnalyticsTab() {
           <CardTitle>Мониторинг по расписанию</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-4">
-            <MetricCard title="Активных мониторов" icon={<Activity className="h-4 w-4" />} value={monitoringSummary.activeMonitors} />
-            <MetricCard title="Проверок" icon={<CheckCircle className="h-4 w-4 text-green-600" />} value={monitoringSummary.runsLastPeriod} />
-            <MetricCard title="Uptime" icon={<Badge className="h-4 px-1">%</Badge>} value={`${monitoringSummary.uptime}%`} />
-            <MetricCard title="Ср. отклик" icon={<Clock className="h-4 w-4 text-blue-600" />} value={`${monitoringSummary.avgResponse} мс`} />
-          </div>
-
           <div className="grid gap-3 md:grid-cols-4">
             <Input
               placeholder="Название монитора"
@@ -276,19 +283,62 @@ export default function AnalyticsTab() {
             </div>
           )}
 
-          <p className="text-xs text-muted-foreground">Для Vercel Hobby проверки запускаются 1 раз в день (cron daily). Для более частых проверок нужен Pro-план.</p>
-
-          <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={uptimeByDay}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="day" />
-                <YAxis domain={[0, 100]} />
-                <Tooltip />
-                <Area type="monotone" dataKey="uptime" stroke="#22c55e" fill="#22c55e33" />
-              </AreaChart>
-            </ResponsiveContainer>
+          <div className="space-y-3">
+            <h4 className="text-sm font-semibold">Список мониторов</h4>
+            {monitors.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Мониторов пока нет. Создайте первый монитор выше.</p>
+            ) : (
+              <div className="space-y-2">
+                {monitors.map((monitor) => (
+                  <button
+                    key={monitor.id}
+                    onClick={() => setSelectedMonitorId(monitor.id)}
+                    className={`w-full rounded-md border p-3 text-left transition-colors ${
+                      selectedMonitorId === monitor.id
+                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                        : 'border-input hover:bg-muted/60'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <div>
+                        <p className="font-medium text-sm">{monitor.name}</p>
+                        <p className="text-xs text-muted-foreground truncate">{monitor.url}</p>
+                      </div>
+                      <Badge variant={monitor.active ? 'default' : 'secondary'}>{monitor.active ? 'Активен' : 'Пауза'}</Badge>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
+
+          {selectedMonitor && (
+            <>
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                <MetricCard title="Активных мониторов" icon={<Activity className="h-4 w-4" />} value={monitoringSummary.activeMonitors} />
+                <MetricCard title="Проверок" icon={<CheckCircle className="h-4 w-4 text-green-600" />} value={monitoringSummary.runsForMonitor} />
+                <MetricCard title="Uptime" icon={<Badge className="h-4 px-1">%</Badge>} value={`${monitoringSummary.uptime}%`} />
+                <MetricCard title="Ср. отклик" icon={<Clock className="h-4 w-4 text-blue-600" />} value={`${monitoringSummary.avgResponse} мс`} />
+              </div>
+
+              <div className="rounded-md border p-3 text-sm">
+                <p><span className="font-medium">Выбранный монитор:</span> {selectedMonitor.name}</p>
+                <p className="text-muted-foreground">{selectedMonitor.url}</p>
+              </div>
+
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={uptimeByDay}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="day" />
+                    <YAxis domain={[0, 100]} />
+                    <Tooltip />
+                    <Area type="monotone" dataKey="uptime" stroke="#22c55e" fill="#22c55e33" />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            </>
+          )}
         </CardContent>
       </Card>
 
