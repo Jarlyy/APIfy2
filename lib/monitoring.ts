@@ -73,7 +73,15 @@ export async function createMonitor(input: {
     .select('*')
     .single()
 
-  if (error) return { success: false, error: error.message }
+  if (error) {
+    const message =
+      error.code === 'PGRST205' || /monitor_configs/i.test(error.message)
+        ? 'Таблица monitor_configs не найдена в Supabase. Примените актуальный supabase/schema.sql.'
+        : error.message
+
+    return { success: false, error: message }
+  }
+
   return { success: true, data: data as MonitorConfig }
 }
 

@@ -37,6 +37,8 @@ export default function AnalyticsTab() {
   const [monitorRuns, setMonitorRuns] = useState<MonitoringRun[]>([])
   const [monitors, setMonitors] = useState<MonitorConfig[]>([])
   const [creatingMonitor, setCreatingMonitor] = useState(false)
+  const [monitorError, setMonitorError] = useState<string | null>(null)
+  const [monitorSuccess, setMonitorSuccess] = useState<string | null>(null)
   const [selectedService, setSelectedService] = useState('all')
   const [selectedEndpoint, setSelectedEndpoint] = useState('all')
   const [newMonitor, setNewMonitor] = useState({ name: '', url: '', interval_minutes: 1440, sla_target: 99.9 })
@@ -195,6 +197,9 @@ export default function AnalyticsTab() {
     if (!newMonitor.name.trim() || !newMonitor.url.trim()) return
 
     setCreatingMonitor(true)
+    setMonitorError(null)
+    setMonitorSuccess(null)
+
     const result = await createMonitor({
       name: newMonitor.name.trim(),
       url: newMonitor.url.trim(),
@@ -205,6 +210,9 @@ export default function AnalyticsTab() {
     if (result.success && result.data) {
       setMonitors(prev => [result.data!, ...prev])
       setNewMonitor({ name: '', url: '', interval_minutes: 1440, sla_target: 99.9 })
+      setMonitorSuccess('Монитор успешно создан.')
+    } else {
+      setMonitorError(result.error || 'Не удалось создать монитор.')
     }
 
     setCreatingMonitor(false)
@@ -255,6 +263,18 @@ export default function AnalyticsTab() {
               <PlusCircle className="mr-2 h-4 w-4" /> {creatingMonitor ? 'Создание...' : 'Добавить монитор'}
             </Button>
           </div>
+
+          {monitorError && (
+            <div className="rounded-md border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-900/40 dark:bg-red-900/20 dark:text-red-300">
+              {monitorError}
+            </div>
+          )}
+
+          {monitorSuccess && (
+            <div className="rounded-md border border-green-300 bg-green-50 px-3 py-2 text-sm text-green-700 dark:border-green-900/40 dark:bg-green-900/20 dark:text-green-300">
+              {monitorSuccess}
+            </div>
+          )}
 
           <p className="text-xs text-muted-foreground">Для Vercel Hobby проверки запускаются 1 раз в день (cron daily). Для более частых проверок нужен Pro-план.</p>
 
