@@ -156,6 +156,33 @@ ALTER TABLE public.monitor_runs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.alert_channels ENABLE ROW LEVEL SECURITY;
 
 -- Users policies (optimized with select auth.uid())
+DROP POLICY IF EXISTS "Users can view own profile" ON public.users;
+DROP POLICY IF EXISTS "Users can update own profile" ON public.users;
+DROP POLICY IF EXISTS "Users can view own tests" ON public.api_tests;
+DROP POLICY IF EXISTS "Users can create own tests" ON public.api_tests;
+DROP POLICY IF EXISTS "Users can update own tests" ON public.api_tests;
+DROP POLICY IF EXISTS "Users can delete own tests" ON public.api_tests;
+DROP POLICY IF EXISTS "Users can view own test history" ON public.test_history;
+DROP POLICY IF EXISTS "Users can create own test history" ON public.test_history;
+DROP POLICY IF EXISTS "Anyone can view API documentation" ON public.api_documentation;
+DROP POLICY IF EXISTS "Users can view own api test history" ON public.api_test_history;
+DROP POLICY IF EXISTS "Users can create own api test history" ON public.api_test_history;
+DROP POLICY IF EXISTS "Users can update own api test history" ON public.api_test_history;
+DROP POLICY IF EXISTS "Users can delete own api test history" ON public.api_test_history;
+DROP POLICY IF EXISTS "Users can view own favorites" ON public.favorites;
+DROP POLICY IF EXISTS "Users can create own favorites" ON public.favorites;
+DROP POLICY IF EXISTS "Users can update own favorites" ON public.favorites;
+DROP POLICY IF EXISTS "Users can delete own favorites" ON public.favorites;
+DROP POLICY IF EXISTS "Users can view own monitor configs" ON public.monitor_configs;
+DROP POLICY IF EXISTS "Users can create own monitor configs" ON public.monitor_configs;
+DROP POLICY IF EXISTS "Users can update own monitor configs" ON public.monitor_configs;
+DROP POLICY IF EXISTS "Users can delete own monitor configs" ON public.monitor_configs;
+DROP POLICY IF EXISTS "Users can view own monitor runs" ON public.monitor_runs;
+DROP POLICY IF EXISTS "System can create monitor runs" ON public.monitor_runs;
+DROP POLICY IF EXISTS "Users can view own alert channels" ON public.alert_channels;
+DROP POLICY IF EXISTS "Users can create own alert channels" ON public.alert_channels;
+DROP POLICY IF EXISTS "Users can update own alert channels" ON public.alert_channels;
+DROP POLICY IF EXISTS "Users can delete own alert channels" ON public.alert_channels;
 CREATE POLICY "Users can view own profile" ON public.users
   FOR SELECT USING ((select auth.uid()) = id);
 
@@ -272,17 +299,22 @@ END;
 $$ LANGUAGE plpgsql SET search_path = public;
 
 -- Triggers for updated_at
+DROP TRIGGER IF EXISTS update_users_updated_at ON public.users;
 CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON public.users
   FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_api_tests_updated_at ON public.api_tests;
 CREATE TRIGGER update_api_tests_updated_at BEFORE UPDATE ON public.api_tests
   FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_api_test_history_updated_at ON public.api_test_history;
 CREATE TRIGGER update_api_test_history_updated_at BEFORE UPDATE ON public.api_test_history
   FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_monitor_configs_updated_at ON public.monitor_configs;
 CREATE TRIGGER update_monitor_configs_updated_at BEFORE UPDATE ON public.monitor_configs
   FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_alert_channels_updated_at ON public.alert_channels;
 CREATE TRIGGER update_alert_channels_updated_at BEFORE UPDATE ON public.alert_channels
   FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
