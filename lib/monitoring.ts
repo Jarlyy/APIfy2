@@ -100,3 +100,18 @@ export async function getMonitoringRuns(limit = 300) {
   if (error) return { success: false, error: error.message }
   return { success: true, data: (data || []) as MonitoringRun[] }
 }
+
+export async function deleteMonitor(monitorId: string) {
+  const supabase = createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { success: false, error: 'Пользователь не авторизован' }
+
+  const { error } = await supabase
+    .from('monitor_configs')
+    .delete()
+    .eq('id', monitorId)
+    .eq('user_id', user.id)
+
+  if (error) return { success: false, error: error.message }
+  return { success: true }
+}

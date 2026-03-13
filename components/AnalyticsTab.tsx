@@ -5,9 +5,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Loader2, Activity, CheckCircle, XCircle, Clock, FilterX, PlusCircle } from 'lucide-react'
+import { Loader2, Activity, CheckCircle, XCircle, Clock, FilterX, PlusCircle, Trash2 } from 'lucide-react'
 import { getTestHistory, TestHistoryItem } from '@/lib/test-history'
-import { createMonitor, getMonitoringRuns, getMonitors, MonitorConfig, MonitoringRun } from '@/lib/monitoring'
+import { createMonitor, deleteMonitor, getMonitoringRuns, getMonitors, MonitorConfig, MonitoringRun } from '@/lib/monitoring'
 import {
   ResponsiveContainer,
   LineChart,
@@ -39,6 +39,7 @@ export default function AnalyticsTab() {
   const [selectedMonitorId, setSelectedMonitorId] = useState<string | null>(null)
 
   const [creatingMonitor, setCreatingMonitor] = useState(false)
+  const [deletingMonitorId, setDeletingMonitorId] = useState<string | null>(null)
   const [monitorError, setMonitorError] = useState<string | null>(null)
   const [monitorSuccess, setMonitorSuccess] = useState<string | null>(null)
 
@@ -232,6 +233,31 @@ export default function AnalyticsTab() {
     setCreatingMonitor(false)
   }
 
+  const handleDeleteMonitor = async (monitorId: string) => {
+    setMonitorError(null)
+    setMonitorSuccess(null)
+    setDeletingMonitorId(monitorId)
+
+    const result = await deleteMonitor(monitorId)
+
+    if (!result.success) {
+      setMonitorError(result.error || 'Не удалось удалить монитор.')
+      setDeletingMonitorId(null)
+      return
+    }
+
+    setMonitors((prev) => prev.filter((m) => m.id !== monitorId))
+    setMonitorRuns((prev) => prev.filter((run) => run.monitor_id !== monitorId))
+
+    if (selectedMonitorId === monitorId) {
+      const next = monitors.find((m) => m.id !== monitorId)
+      setSelectedMonitorId(next?.id || null)
+    }
+
+    setMonitorSuccess('Монитор удален.')
+    setDeletingMonitorId(null)
+  }
+
   if (loading) {
     return (
       <div className="py-12 text-center text-zinc-500 dark:text-zinc-400">
@@ -304,7 +330,22 @@ export default function AnalyticsTab() {
                         <p className="font-medium text-sm">{monitor.name}</p>
                         <p className="text-xs text-muted-foreground truncate">{monitor.url}</p>
                       </div>
-                      <Badge variant={monitor.active ? 'default' : 'secondary'}>{monitor.active ? 'Активен' : 'Пауза'}</Badge>
+                      <div className="flex items-center gap-2">
+                        <Badge variant={monitor.active ? 'default' : 'secondary'}>{monitor.active ? 'Активен' : 'Пауза'}</Badge>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 text-red-500 hover:text-red-600"
+                          disabled={deletingMonitorId === monitor.id}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleDeleteMonitor(monitor.id)
+                          }}
+                          title="Удалить монитор"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
                   </button>
                 ))}

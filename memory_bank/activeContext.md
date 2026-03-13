@@ -28,3 +28,5 @@ Synchronize Memory Bank with the current repository state after monitoring/analy
 - Added idempotent Supabase schema handling (DROP POLICY/TRIGGER IF EXISTS before CREATE) to avoid re-run failures.
 
 - Updated analytics UX: monitors are listed and selecting a monitor shows its chart/details; removed Hobby warning text from UI.
+
+- Added monitor deletion capability in analytics monitor list (with immediate list/state update).
