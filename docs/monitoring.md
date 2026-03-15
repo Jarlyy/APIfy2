@@ -14,7 +14,7 @@
 
 ## Как запустить cron
 
-На Vercel можно настроить Cron Job на `POST /api/monitor/run`.
+На Vercel можно настроить Cron Job на `/api/monitor/run` (роут поддерживает `GET` и `POST`).
 
 Пример:
 - путь: `/api/monitor/run`

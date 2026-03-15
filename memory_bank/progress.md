@@ -10,6 +10,7 @@
 - AGENTS requests `bun`/`biome`, while repo/runtime workflow currently uses `pnpm` and ESLint.
 
 ## Changelog
+- 2026-03-15: Раннер мониторинга `/api/monitor/run` сделан совместимым с GET и POST для Vercel Cron.
 - 2026-03-14: Выравнена форма создания монитора, добавлена подпись «Эндпоинт», удалена лишняя подсказка под интервалом.
 - 2026-03-14: Сделано более понятным поле интервала при создании монитора (подпись + пояснение).
 - 2026-03-13: Added monitor deletion from analytics list UI.
@@ -22,5 +23,5 @@
 - 2026-03-12: `systemPatterns.md` updated with monitoring/alerts architecture notes.
 
 ## Change Control
-- last_checked_commit: `feadc9f`
-- checked_on: `2026-03-14`
+- last_checked_commit: `2026-03-15`
+- checked_on: `2026-03-15`
