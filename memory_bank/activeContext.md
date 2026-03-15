@@ -30,3 +30,5 @@ Synchronize Memory Bank with the current repository state after monitoring/analy
 - Updated analytics UX: monitors are listed and selecting a monitor shows its chart/details; removed Hobby warning text from UI.
 
 - Added monitor deletion capability in analytics monitor list (with immediate list/state update).
+
+- Улучшена форма создания монитора: поле `1440` теперь подписано как интервал проверок в минутах и дополнено пояснением по смыслу значения.

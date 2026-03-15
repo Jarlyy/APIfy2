@@ -10,6 +10,7 @@
 - AGENTS requests `bun`/`biome`, while repo/runtime workflow currently uses `pnpm` and ESLint.
 
 ## Changelog
+- 2026-03-14: Сделано более понятным поле интервала при создании монитора (подпись + пояснение).
 - 2026-03-13: Added monitor deletion from analytics list UI.
 - 2026-03-13: Improved monitoring analytics UX (monitor list, selected monitor details, hide chart when no monitor).
 - 2026-03-12: Made Supabase schema idempotent for re-runs (policy/trigger exists errors fixed).
@@ -20,5 +21,5 @@
 - 2026-03-12: `systemPatterns.md` updated with monitoring/alerts architecture notes.
 
 ## Change Control
-- last_checked_commit: `e062ed4c87bf9bb91ac429acb5c1b1b2fd620c70`
-- checked_on: `2026-03-12`
+- last_checked_commit: `c83d5ea`
+- checked_on: `2026-03-14`

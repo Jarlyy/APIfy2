@@ -285,13 +285,23 @@ export default function AnalyticsTab() {
               value={newMonitor.url}
               onChange={(e) => setNewMonitor(prev => ({ ...prev, url: e.target.value }))}
             />
-            <Input
-              type="number"
-              min={1440}
-              value={newMonitor.interval_minutes}
-              onChange={(e) => setNewMonitor(prev => ({ ...prev, interval_minutes: Number(e.target.value || 1440) }))}
-              placeholder="Интервал (мин)"
-            />
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-muted-foreground" htmlFor="monitor-interval">
+                Интервал проверок (в минутах)
+              </label>
+              <Input
+                id="monitor-interval"
+                type="number"
+                min={1440}
+                step={60}
+                value={newMonitor.interval_minutes}
+                onChange={(e) => setNewMonitor(prev => ({ ...prev, interval_minutes: Number(e.target.value || 1440) }))}
+                placeholder="Например, 1440 = 1 раз в день"
+              />
+              <p className="text-xs text-muted-foreground">
+                Сколько минут ждать между автоматическими проверками.
+              </p>
+            </div>
             <Button onClick={handleCreateMonitor} disabled={creatingMonitor || !newMonitor.name || !newMonitor.url}>
               <PlusCircle className="mr-2 h-4 w-4" /> {creatingMonitor ? 'Создание...' : 'Добавить монитор'}
             </Button>
