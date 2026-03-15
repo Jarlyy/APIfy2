@@ -275,16 +275,28 @@ export default function AnalyticsTab() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid gap-3 md:grid-cols-4">
-            <Input
-              placeholder="Название монитора"
-              value={newMonitor.name}
-              onChange={(e) => setNewMonitor(prev => ({ ...prev, name: e.target.value }))}
-            />
-            <Input
-              placeholder="https://api.example.com/health"
-              value={newMonitor.url}
-              onChange={(e) => setNewMonitor(prev => ({ ...prev, url: e.target.value }))}
-            />
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-muted-foreground" htmlFor="monitor-name">
+                Название
+              </label>
+              <Input
+                id="monitor-name"
+                placeholder="Название монитора"
+                value={newMonitor.name}
+                onChange={(e) => setNewMonitor(prev => ({ ...prev, name: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-muted-foreground" htmlFor="monitor-endpoint">
+                Эндпоинт
+              </label>
+              <Input
+                id="monitor-endpoint"
+                placeholder="https://api.example.com/health"
+                value={newMonitor.url}
+                onChange={(e) => setNewMonitor(prev => ({ ...prev, url: e.target.value }))}
+              />
+            </div>
             <div className="space-y-1">
               <label className="text-xs font-medium text-muted-foreground" htmlFor="monitor-interval">
                 Интервал проверок (в минутах)
@@ -298,11 +310,12 @@ export default function AnalyticsTab() {
                 onChange={(e) => setNewMonitor(prev => ({ ...prev, interval_minutes: Number(e.target.value || 1440) }))}
                 placeholder="Например, 1440 = 1 раз в день"
               />
-              <p className="text-xs text-muted-foreground">
-                Сколько минут ждать между автоматическими проверками.
-              </p>
             </div>
-            <Button onClick={handleCreateMonitor} disabled={creatingMonitor || !newMonitor.name || !newMonitor.url}>
+            <Button
+              className="self-end"
+              onClick={handleCreateMonitor}
+              disabled={creatingMonitor || !newMonitor.name || !newMonitor.url}
+            >
               <PlusCircle className="mr-2 h-4 w-4" /> {creatingMonitor ? 'Создание...' : 'Добавить монитор'}
             </Button>
           </div>

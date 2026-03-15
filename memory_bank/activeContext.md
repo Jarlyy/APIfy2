@@ -32,3 +32,4 @@ Synchronize Memory Bank with the current repository state after monitoring/analy
 - Added monitor deletion capability in analytics monitor list (with immediate list/state update).
 
 - Улучшена форма создания монитора: поле `1440` теперь подписано как интервал проверок в минутах и дополнено пояснением по смыслу значения.
+- Выравнена форма создания монитора: добавлены единые подписи над полями, подпись «Эндпоинт», убран лишний текст под интервалом.
