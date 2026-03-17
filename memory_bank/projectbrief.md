@@ -1,34 +1,50 @@
 # APIfy2 Project Brief
 
 ## Summary
-APIfy2 is a web application for interactive API testing, documentation-assisted request generation, and AI-powered response analysis. The current implementation is a Next.js application with Supabase-backed authentication and persistence.
+APIfy2 is a Next.js application for API exploration, manual request execution, OpenAPI-driven workflows, scheduled monitoring, and AI-assisted analysis. The current codebase combines a dashboard-style frontend, server routes under `app/api`, and Supabase-backed auth/data storage.
 
 ## Goals
-- Provide a single workspace for manual API testing.
-- Support importing OpenAPI/Swagger specs and working from documented endpoints.
-- Store request history, favorites, and analytics for authenticated users.
-- Offer AI-assisted analysis and test generation workflows.
+- Give developers and QA engineers one workspace for API testing.
+- Reduce setup time through OpenAPI import and reusable request data.
+- Persist user data such as history, favorites, and monitoring state.
+- Add AI-assisted analysis and test-generation helpers on top of raw API calls.
+- Support recurring health checks and alerting for important endpoints.
 
 ## Current Scope
-- Next.js App Router frontend and server routes.
-- Supabase integration for auth and database-backed data.
-- API testing workspace with auth helpers and response inspection.
-- AI provider integrations for analysis flows.
-- Vercel-oriented deployment configuration.
+- App Router pages for dashboard, auth, and feature test routes.
+- API endpoints for proxying, AI analysis, provider testing, test generation, and monitoring execution.
+- Supabase integration for authentication and persisted records.
+- Client-side workspace centered around `MainWorkspace` and `UnifiedApiTester`.
+- Monitoring configuration, run history, and alert channel persistence in the database layer.
+- Vercel-oriented deployment files and Supabase SQL schema.
 
 ## Constraints
-- The repository currently uses `pnpm` (`pnpm-lock.yaml`, `packageManager` in `package.json`) even though `docs/AGENTS.md` says to use `bun`.
-- `docs/README.md` is referenced by `docs/AGENTS.md` as the architecture source of truth, but that file is currently absent.
-- The development server must not be started, stopped, or inspected by the agent per `docs/AGENTS.md`.
+- The repository instructions in `AGENTS.md` require `bun` and `biome`, but the checked-in project metadata still points to `pnpm` and ESLint.
+- `docs/README.md` is still absent, so there is no canonical architecture document in the location mandated by `AGENTS.md`.
+- The development server must not be started, stopped, or inspected by the agent.
 
 ## Primary References
+- `AGENTS.md`
 - `README.md`
 - `docs/prd.md`
 - `docs/development-plan.md`
-- `docs/AGENTS.md`
-
+- `supabase/schema.sql`
 
 ## Recent Additions
 - Scheduled monitoring with cron runner and alert channels.
-- Uptime/SLA analytics extension in dashboard analytics tab.
-- Placeholder-aware execution flow for generated/manual tests.
+- Uptime and SLA analytics extensions in the dashboard flow.
+- Placeholder-aware execution flow for generated and manual tests.
+
+## Project Deliverables
+| ID | Deliverable | Status | Weight |
+| --- | --- | --- | --- |
+| DEL-001 | Core API testing workspace with manual request execution | completed | 20 |
+| DEL-002 | Authentication and user-scoped persistence via Supabase | completed | 15 |
+| DEL-003 | OpenAPI import and specification-driven request preparation | completed | 15 |
+| DEL-004 | AI-assisted analysis and test generation flows | completed | 15 |
+| DEL-005 | Monitoring, alerting, and uptime analytics workflows | completed | 15 |
+| DEL-006 | Dashboard productivity features: history, favorites, workspace polish | in_progress | 10 |
+| DEL-007 | Operational documentation and tooling alignment with AGENTS requirements | blocked | 10 |
+
+## Project Completion
+Project completion based on completed deliverables: 80%.

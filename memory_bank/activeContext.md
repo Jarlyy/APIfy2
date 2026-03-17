@@ -1,36 +1,20 @@
 # Active Context
 
 ## Current Task
-Synchronize Memory Bank with the current repository state after monitoring/analytics/placeholder updates and recent revert operations.
+Synchronize the Memory Bank with the latest repository state after recent monitoring and analytics work, validate the required structure from `AGENTS.md`, and complete commit/push of the full working tree.
 
 ## Current Findings
-- `docs/AGENTS.md` is present and defines Memory Bank as mandatory operational context.
-- Current feature baseline includes:
-  - scheduled monitoring (`/api/monitor/run`)
-  - alert fanout channels (Slack/Telegram/Email)
-  - uptime/SLA analytics in `AnalyticsTab`
-  - placeholder resolution flow in `UnifiedApiTester`
-- `memory_bank/` files existed but were stale (old task notes, outdated tooling assumptions and last_checked_commit).
+- The required root Memory Bank files exist, but they needed a refresh to reflect both the latest upstream monitoring work and the current local working tree.
+- Current feature baseline includes manual API testing, AI analysis and generation, OpenAPI import, scheduled monitoring, alert fanout, and placeholder-aware request execution.
+- `projectbrief.md` previously lacked the mandatory `Project Deliverables` section required for canonical progress tracking.
+- `memory_bank/ui_extension/` was absent even though the repository exposes public pages and key UI components that should be documented.
+- The repository instructions and actual tooling are still misaligned: `AGENTS.md` says `bun` and `biome`, while project metadata still points to `pnpm` and ESLint.
 
 ## Decisions
-- Keep Memory Bank structure from AGENTS (`projectbrief`, `productContext`, `activeContext`, `systemPatterns`, `techContext`, `progress`).
-- Align records with actual repo state and current workflow (`pnpm` in this environment).
-- Update `progress.md` change control (`last_checked_commit`) to current HEAD after this sync commit.
+- Treat the root `AGENTS.md` as the active repository rule set.
+- Keep Memory Bank synchronized to code-visible behavior plus confirmed roadmap documents.
+- Preserve the user's current working-tree intent while rebasing on top of the latest remote `main`.
 
 ## Next Actions
-1. Keep Memory Bank in sync on every architecture/flow change.
-2. Add dedicated module notes for monitoring runner and analytics when implementation stabilizes.
-
-
-## Session Note
-- Fixed Vercel Hobby deployment issue by switching cron schedule to daily and setting monitoring default interval to 1440 minutes.
-
-- Added idempotent Supabase schema handling (DROP POLICY/TRIGGER IF EXISTS before CREATE) to avoid re-run failures.
-
-- Updated analytics UX: monitors are listed and selecting a monitor shows its chart/details; removed Hobby warning text from UI.
-
-- Added monitor deletion capability in analytics monitor list (with immediate list/state update).
-
-- Улучшена форма создания монитора: поле `1440` теперь подписано как интервал проверок в минутах и дополнено пояснением по смыслу значения.
-- Выравнена форма создания монитора: добавлены единые подписи над полями, подпись «Эндпоинт», убран лишний текст под интервалом.
-- Для стабильности Vercel Cron обновлен раннер `/api/monitor/run`: добавлена поддержка GET наряду с POST.
+- Finish conflict resolution during rebase.
+- Continue the rebase, then push the updated `main` branch to `origin`.

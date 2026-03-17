@@ -116,9 +116,6 @@ export function UnifiedApiTester({ userId, testData }: UnifiedApiTesterProps) {
     visible: boolean
   }>({ message: '', type: 'success', visible: false });
 
-  // Placeholder values (shared across generated/manual flows)
-  const [placeholderValues, setPlaceholderValues] = useState<Record<string, string>>({});
-
   // Заполняем форму данными из истории при получении testData
   useEffect(() => {
     if (testData) {
@@ -139,59 +136,6 @@ export function UnifiedApiTester({ userId, testData }: UnifiedApiTesterProps) {
       setActiveTab('manual')
     }
   }, [testData])
-
-
-  const extractPlaceholders = (value: string): string[] => {
-    if (!value) return [];
-    const matches = new Set<string>();
-    const regex = /\{\{\s*([a-zA-Z0-9_.-]+)\s*\}\}|\{\s*([a-zA-Z0-9_.-]+)\s*\}/g;
-
-    for (const match of value.matchAll(regex)) {
-      const name = match[1] || match[2];
-      if (name) {
-        matches.add(name.trim());
-      }
-    }
-
-    return [...matches];
-  };
-
-  const resolvePlaceholders = (value: string): string => {
-    if (!value) return value;
-
-    return value.replace(/\{\{\s*([a-zA-Z0-9_.-]+)\s*\}\}|\{\s*([a-zA-Z0-9_.-]+)\s*\}/g, (full, m1, m2) => {
-      const key = (m1 || m2 || '').trim();
-      const replacement = placeholderValues[key];
-      return replacement !== undefined && replacement !== '' ? replacement : full;
-    });
-  };
-
-  const getTestPlaceholders = (test: ExecutableTest): string[] => {
-    const raw = [
-      test.url,
-      test.body || '',
-      JSON.stringify(test.headers || {}),
-      test.auth_token || '',
-    ].join(' ');
-
-    return extractPlaceholders(raw);
-  };
-
-  const getManualPlaceholders = (): string[] => {
-    const raw = [
-      manualTest.url,
-      manualTest.body,
-      manualTest.headers,
-      manualTest.authType === 'bearer' ? manualTest.bearerToken : '',
-      manualTest.authType === 'api-key' ? manualTest.apiKey : '',
-    ].join(' ');
-
-    return extractPlaceholders(raw);
-  };
-
-  const getMissingPlaceholders = (placeholders: string[]): string[] => {
-    return placeholders.filter((name) => !placeholderValues[name] || !placeholderValues[name].trim());
-  };
 
   const showNotification = (message: string, type: 'success' | 'error') => {
     setNotification({ message, type, visible: true })
@@ -426,21 +370,6 @@ export function UnifiedApiTester({ userId, testData }: UnifiedApiTesterProps) {
 
   // Test Execution Functions
   const runTest = async (test: ExecutableTest) => {
-    const placeholders = getTestPlaceholders(test);
-    const missingPlaceholders = getMissingPlaceholders(placeholders);
-
-    if (missingPlaceholders.length > 0) {
-      showNotification(`Заполните значения плейсхолдеров: ${missingPlaceholders.join(', ')}`, 'error');
-      return;
-    }
-
-    const resolvedUrl = resolvePlaceholders(test.url);
-    const resolvedBody = resolvePlaceholders(test.body || '');
-    const resolvedHeaders = Object.fromEntries(
-      Object.entries(test.headers || {}).map(([key, value]) => [key, resolvePlaceholders(String(value))])
-    );
-    const resolvedAuthToken = resolvePlaceholders(test.auth_token || '');
-
     setResults(prev => ({
       ...prev,
       [test.id]: { id: test.id, status: 'running' }
@@ -449,12 +378,12 @@ export function UnifiedApiTester({ userId, testData }: UnifiedApiTesterProps) {
     const startTime = Date.now();
 
     try {
-      const headers = { ...resolvedHeaders };
+      const headers = { ...test.headers };
       
-      if (test.auth_type === 'bearer' && resolvedAuthToken) {
-        headers['Authorization'] = `Bearer ${resolvedAuthToken}`;
-      } else if (test.auth_type === 'api-key' && resolvedAuthToken) {
-        headers['X-API-Key'] = resolvedAuthToken;
+      if (test.auth_type === 'bearer' && test.auth_token) {
+        headers['Authorization'] = `Bearer ${test.auth_token}`;
+      } else if (test.auth_type === 'api-key' && test.auth_token) {
+        headers['X-API-Key'] = test.auth_token;
       }
 
       const requestOptions: RequestInit = {
@@ -463,8 +392,8 @@ export function UnifiedApiTester({ userId, testData }: UnifiedApiTesterProps) {
         mode: 'cors',
       };
 
-      if (resolvedBody && test.method !== 'GET') {
-        requestOptions.body = resolvedBody;
+      if (test.body && test.method !== 'GET') {
+        requestOptions.body = test.body;
       }
 
       // Применяем CORS прокси если включен
@@ -474,7 +403,7 @@ export function UnifiedApiTester({ userId, testData }: UnifiedApiTesterProps) {
         
         if (proxyType === 'local') {
           // Используем локальный прокси
-          const proxyUrl = `/api/proxy?url=${encodeURIComponent(resolvedUrl)}`;
+          const proxyUrl = `/api/proxy?url=${encodeURIComponent(test.url)}`;
           const proxyResponse = await fetch(proxyUrl, requestOptions);
           
           let proxyResult;
@@ -504,12 +433,12 @@ export function UnifiedApiTester({ userId, testData }: UnifiedApiTesterProps) {
           const historyItem: TestHistoryItem = {
             service_name: test.name || 'Generated Test',
             test_name: test.name,
-            url: resolvedUrl,
+            url: test.url,
             method: test.method,
-            headers: resolvedHeaders,
-            body: resolvedBody,
+            headers: test.headers,
+            body: test.body,
             auth_type: test.auth_type,
-            auth_token: resolvedAuthToken,
+            auth_token: test.auth_token,
             status_code: proxyResult.status,
             response_data: proxyResult.data,
             response_time: duration,
@@ -527,7 +456,7 @@ export function UnifiedApiTester({ userId, testData }: UnifiedApiTesterProps) {
       }
 
       // Обычный запрос без прокси
-      response = await fetch(resolvedUrl, requestOptions);
+      response = await fetch(test.url, requestOptions);
       const duration = Date.now() - startTime;
       
       let responseData;
@@ -561,12 +490,12 @@ export function UnifiedApiTester({ userId, testData }: UnifiedApiTesterProps) {
       const historyItem: TestHistoryItem = {
         service_name: test.name || 'Generated Test',
         test_name: test.name,
-        url: resolvedUrl,
+        url: test.url,
         method: test.method,
-        headers: resolvedHeaders,
-        body: resolvedBody,
+        headers: test.headers,
+        body: test.body,
         auth_type: test.auth_type,
-        auth_token: resolvedAuthToken,
+        auth_token: test.auth_token,
         status_code: response.status,
         response_data: responseData,
         response_time: duration,
@@ -602,12 +531,12 @@ export function UnifiedApiTester({ userId, testData }: UnifiedApiTesterProps) {
       const historyItem: TestHistoryItem = {
         service_name: test.name || 'Generated Test',
         test_name: test.name,
-        url: resolvedUrl,
+        url: test.url,
         method: test.method,
-        headers: resolvedHeaders,
-        body: resolvedBody,
+        headers: test.headers,
+        body: test.body,
         auth_type: test.auth_type,
-        auth_token: resolvedAuthToken,
+        auth_token: test.auth_token,
         error_message: errorMessage,
         response_time: duration,
         test_status: 'error',
@@ -632,36 +561,22 @@ export function UnifiedApiTester({ userId, testData }: UnifiedApiTesterProps) {
 
   // Manual Test Functions
   const runManualTest = async () => {
-    const manualPlaceholders = getManualPlaceholders();
-    const missingPlaceholders = getMissingPlaceholders(manualPlaceholders);
-
-    if (missingPlaceholders.length > 0) {
-      showNotification(`Заполните значения плейсхолдеров: ${missingPlaceholders.join(', ')}`, 'error');
-      return;
-    }
-
     setManualLoading(true);
     setManualResult(null);
 
     try {
-      const resolvedUrl = resolvePlaceholders(manualTest.url);
-      const resolvedBody = resolvePlaceholders(manualTest.body || '');
-      const resolvedHeadersText = resolvePlaceholders(manualTest.headers || '{}');
-      const resolvedBearerToken = resolvePlaceholders(manualTest.bearerToken || '');
-      const resolvedApiKey = resolvePlaceholders(manualTest.apiKey || '');
-
       let parsedHeaders = {};
       try {
-        parsedHeaders = JSON.parse(resolvedHeadersText);
+        parsedHeaders = JSON.parse(manualTest.headers);
       } catch (e) {
         throw new Error('Неверный формат заголовков JSON');
       }
 
       // Добавляем аутентификацию
-      if (manualTest.authType === 'bearer' && resolvedBearerToken) {
-        parsedHeaders = { ...parsedHeaders, Authorization: `Bearer ${resolvedBearerToken}` };
-      } else if (manualTest.authType === 'api-key' && resolvedApiKey) {
-        parsedHeaders = { ...parsedHeaders, [manualTest.apiKeyHeader]: resolvedApiKey };
+      if (manualTest.authType === 'bearer' && manualTest.bearerToken) {
+        parsedHeaders = { ...parsedHeaders, Authorization: `Bearer ${manualTest.bearerToken}` };
+      } else if (manualTest.authType === 'api-key' && manualTest.apiKey) {
+        parsedHeaders = { ...parsedHeaders, [manualTest.apiKeyHeader]: manualTest.apiKey };
       } else if (manualTest.authType === 'basic' && manualTest.basicUsername && manualTest.basicPassword) {
         const credentials = btoa(`${manualTest.basicUsername}:${manualTest.basicPassword}`);
         parsedHeaders = { ...parsedHeaders, Authorization: `Basic ${credentials}` };
@@ -675,11 +590,11 @@ export function UnifiedApiTester({ userId, testData }: UnifiedApiTesterProps) {
         
         if (proxyType === 'local') {
           // Используем локальный прокси
-          const proxyUrl = `/api/proxy?url=${encodeURIComponent(resolvedUrl)}`;
+          const proxyUrl = `/api/proxy?url=${encodeURIComponent(manualTest.url)}`;
           const proxyResponse = await fetch(proxyUrl, {
             method: manualTest.method,
             headers: parsedHeaders,
-            body: manualTest.method !== 'GET' && resolvedBody ? resolvedBody : undefined,
+            body: manualTest.method !== 'GET' && manualTest.body ? manualTest.body : undefined,
           });
 
           let proxyResult;
@@ -709,13 +624,13 @@ export function UnifiedApiTester({ userId, testData }: UnifiedApiTesterProps) {
           const historyItem: TestHistoryItem = {
             service_name: manualTest.serviceName || 'Manual Test',
             test_name: manualTest.serviceName,
-            url: resolvedUrl,
+            url: manualTest.url,
             method: manualTest.method,
             headers: parsedHeaders,
-            body: resolvedBody,
+            body: manualTest.body,
             auth_type: manualTest.authType,
-            auth_token: manualTest.authType === 'bearer' ? resolvedBearerToken : 
-                       manualTest.authType === 'api-key' ? resolvedApiKey : '',
+            auth_token: manualTest.authType === 'bearer' ? manualTest.bearerToken : 
+                       manualTest.authType === 'api-key' ? manualTest.apiKey : '',
             status_code: proxyResult.status,
             response_data: proxyResult.data,
             response_time: responseTime,
@@ -733,10 +648,10 @@ export function UnifiedApiTester({ userId, testData }: UnifiedApiTesterProps) {
       }
 
       // Обычный запрос без прокси
-      const response = await fetch(resolvedUrl, {
+      const response = await fetch(manualTest.url, {
         method: manualTest.method,
         headers: parsedHeaders,
-        body: manualTest.method !== 'GET' && resolvedBody ? resolvedBody : undefined,
+        body: manualTest.method !== 'GET' && manualTest.body ? manualTest.body : undefined,
         mode: 'cors'
       });
 
@@ -763,13 +678,13 @@ export function UnifiedApiTester({ userId, testData }: UnifiedApiTesterProps) {
       const historyItem: TestHistoryItem = {
         service_name: manualTest.serviceName || 'Manual Test',
         test_name: manualTest.serviceName,
-        url: resolvedUrl,
+        url: manualTest.url,
         method: manualTest.method,
         headers: parsedHeaders,
-        body: resolvedBody,
+        body: manualTest.body,
         auth_type: manualTest.authType,
-        auth_token: manualTest.authType === 'bearer' ? resolvedBearerToken : 
-                   manualTest.authType === 'api-key' ? resolvedApiKey : '',
+        auth_token: manualTest.authType === 'bearer' ? manualTest.bearerToken : 
+                   manualTest.authType === 'api-key' ? manualTest.apiKey : '',
         status_code: response.status,
         response_data: data,
         response_time: responseTime,
@@ -1048,8 +963,6 @@ export function UnifiedApiTester({ userId, testData }: UnifiedApiTesterProps) {
                     {generatedTests.map((test) => {
                       const result = results[test.id];
                       const isExpanded = expandedResults[test.id];
-                      const placeholders = getTestPlaceholders(test);
-                      const missingPlaceholders = getMissingPlaceholders(placeholders);
 
                       return (
                         <Card key={test.id} className="overflow-hidden">
@@ -1065,11 +978,6 @@ export function UnifiedApiTester({ userId, testData }: UnifiedApiTesterProps) {
                                     <Badge variant="outline" className={`${getCategoryColor(test.category)} text-xs px-1 py-0`}>
                                       {test.category}
                                     </Badge>
-                                    {placeholders.length > 0 && (
-                                      <Badge variant="secondary" className="text-xs px-1 py-0">
-                                        Плейсхолдеры: {placeholders.length}
-                                      </Badge>
-                                    )}
                                   </div>
                                   <code className="text-xs bg-muted px-1 py-0.5 rounded truncate block max-w-md">
                                     {test.url}
@@ -1124,7 +1032,7 @@ export function UnifiedApiTester({ userId, testData }: UnifiedApiTesterProps) {
                                   
                                   <Button
                                     onClick={() => runTest(test)}
-                                    disabled={result?.status === 'running' || missingPlaceholders.length > 0}
+                                    disabled={result?.status === 'running'}
                                     size="sm"
                                   >
                                     <Play className="h-3 w-3 mr-1" />
@@ -1143,25 +1051,6 @@ export function UnifiedApiTester({ userId, testData }: UnifiedApiTesterProps) {
                                 </div>
                               </div>
                             </div>
-
-                            {placeholders.length > 0 && (
-                              <div className="mt-3 pt-3 border-t space-y-2">
-                                <p className="text-xs text-muted-foreground">Заполните значения плейсхолдеров для этого теста:</p>
-                                <div className="grid gap-2 md:grid-cols-2">
-                                  {placeholders.map((name) => (
-                                    <div key={`${test.id}-${name}`}>
-                                      <label className="text-xs font-medium">{name}</label>
-                                      <Input
-                                        value={placeholderValues[name] || ''}
-                                        onChange={(e) => setPlaceholderValues(prev => ({ ...prev, [name]: e.target.value }))}
-                                        placeholder={`Введите значение для ${name}`}
-                                        className="h-8 text-xs"
-                                      />
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
 
                             {result && isExpanded && (
                               <div className="mt-3 pt-3 border-t space-y-2">
@@ -1276,25 +1165,6 @@ export function UnifiedApiTester({ userId, testData }: UnifiedApiTesterProps) {
                     />
                   </div>
                 </div>
-
-                {getManualPlaceholders().length > 0 && (
-                  <div className="rounded-md border border-input bg-muted/30 p-3 space-y-2">
-                    <p className="text-xs text-muted-foreground">Обнаружены плейсхолдеры в запросе. Заполните значения:</p>
-                    <div className="grid gap-2 md:grid-cols-2">
-                      {getManualPlaceholders().map((name) => (
-                        <div key={`manual-${name}`}>
-                          <label className="text-xs font-medium">{name}</label>
-                          <Input
-                            value={placeholderValues[name] || ''}
-                            onChange={(e) => setPlaceholderValues(prev => ({ ...prev, [name]: e.target.value }))}
-                            placeholder={`Введите значение для ${name}`}
-                            className="h-8 text-xs"
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
 
                 <div className="grid grid-cols-3 gap-3">
                   <div>

@@ -1,30 +1,39 @@
 # Tech Context
 
 ## Stack
-- Next.js 16 + React 19 + TypeScript
-- Tailwind CSS + Radix UI + Lucide
-- Supabase (`@supabase/ssr`, `@supabase/supabase-js`)
-- Recharts for analytics charts
+- Framework: Next.js 16
+- UI: React 19, Tailwind CSS 4, Radix UI, Lucide icons
+- Language: TypeScript
+- Backend services: Supabase SSR and Supabase JS
+- Visualization: Recharts
 
-## Operational Tooling (Effective)
-- Package manager currently used in this environment/repo: **pnpm**
-- Linting setup in repo: ESLint (`eslint.config.mjs`)
-- Type checking: `tsc --noEmit`
+## Repo and Tooling
+- Package manager in the checked-in metadata: `pnpm`
+- Lockfile present: `pnpm-lock.yaml`
+- Lint tooling in codebase: ESLint via `next lint`
+- Deployment files: `vercel.json`, `.vercelignore`
+- Styling/build support: `postcss.config.mjs`, `next.config.ts`
 
 ## Monitoring-Specific Tech
-- Cron entry in `vercel.json` for `/api/monitor/run`
-- Service-role client in `lib/supabase/admin.ts`
-- Alert integrations:
-  - Slack webhook
-  - Telegram Bot API
-  - Resend API (email)
+- Cron entry in deployment configuration for the monitoring runner.
+- Service-role backed monitoring and alert workflows reflected in the schema and recent product plan.
+- Alert integrations include Slack, Telegram, and email channels at the product-design level.
 
-## Env Variables (Critical)
-- `NEXT_PUBLIC_SUPABASE_URL`
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-- `SUPABASE_SERVICE_ROLE_KEY`
-- `MONITOR_CRON_SECRET` (recommended for cron endpoint auth)
-- Optional AI and alert provider keys/config values
+## Important Paths
+- Routes: `app/`
+- Feature components: `components/`
+- Shared logic: `lib/`
+- Auth hook: `hooks/useAuth.ts`
+- Database schema: `supabase/schema.sql`
+- Operational memory: `memory_bank/`
 
-## Constraints
-- External font fetching (`next/font` + Google Fonts) may break build in restricted networks.
+## Environment Expectations
+- Supabase environment variables are required for auth and persistence features.
+- AI provider keys are required for AI analysis and generation routes.
+- Monitoring and alerting flows require their respective service credentials when enabled.
+- Vercel is the documented deployment target.
+
+## Tooling Mismatches To Remember
+- `AGENTS.md` requires `bun`, but `package.json` and the lockfile still point to `pnpm`.
+- `AGENTS.md` requires `biome`, but Biome is not declared in `package.json`.
+- Because this task only changes Markdown files, no Biome run is applicable here under the repository rule that excludes `*.md`.
