@@ -32,10 +32,10 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key-here
 
 ```bash
 # Установка зависимостей (если еще не установлены)
-pnpm install
+bun install
 
 # Запуск в режиме разработки
-pnpm dev
+bun dev
 ```
 
 Приложение будет доступно по адресу: http://localhost:3000
@@ -123,7 +123,7 @@ pnpm dev
 ```bash
 # Очистите кэш и перезапустите
 rm -rf .next
-pnpm dev
+bun dev
 ```
 
 ### CORS ошибки

@@ -8,8 +8,8 @@
 - Visualization: Recharts
 
 ## Repo and Tooling
-- Package manager in the checked-in metadata: `pnpm`
-- Lockfile present: `pnpm-lock.yaml`
+- Package manager in the checked-in metadata: `bun`
+- Lockfile present: `bun.lock`
 - Lint tooling in codebase: ESLint via `next lint`
 - Deployment files: `vercel.json`, `.vercelignore`
 - Styling/build support: `postcss.config.mjs`, `next.config.ts`
@@ -34,6 +34,5 @@
 - Vercel is the documented deployment target.
 
 ## Tooling Mismatches To Remember
-- `AGENTS.md` requires `bun`, but `package.json` and the lockfile still point to `pnpm`.
 - `AGENTS.md` requires `biome`, but Biome is not declared in `package.json`.
-- Because this task only changes Markdown files, no Biome run is applicable here under the repository rule that excludes `*.md`.
+- This task updates package-manager metadata and docs, so Biome should be run only for changed non-Markdown files that it supports.

@@ -1,20 +1,19 @@
 # Active Context
 
 ## Current Task
-Synchronize the Memory Bank with the latest repository state after recent monitoring and analytics work, validate the required structure from `AGENTS.md`, and complete commit/push of the full working tree.
+Migrate the repository from `pnpm` to `bun` in accordance with `AGENTS.md`, align install/run documentation, and regenerate package-manager artifacts.
 
 ## Current Findings
-- The required root Memory Bank files exist, but they needed a refresh to reflect both the latest upstream monitoring work and the current local working tree.
-- Current feature baseline includes manual API testing, AI analysis and generation, OpenAPI import, scheduled monitoring, alert fanout, and placeholder-aware request execution.
-- `projectbrief.md` previously lacked the mandatory `Project Deliverables` section required for canonical progress tracking.
-- `memory_bank/ui_extension/` was absent even though the repository exposes public pages and key UI components that should be documented.
-- The repository instructions and actual tooling are still misaligned: `AGENTS.md` says `bun` and `biome`, while project metadata still points to `pnpm` and ESLint.
+- `package.json` now declares `bun@1.3.10` as the canonical `packageManager`, and the direct `pnpm` dependency has been removed.
+- The repository now contains `bun.lock`; the obsolete `pnpm-lock.yaml` and `.npmrc` have been removed.
+- Root onboarding docs and supporting setup docs now use `bun install` and `bun dev`.
+- `bun` had to be installed locally during this task to generate the new lockfile and verify the migration path.
 
 ## Decisions
 - Treat the root `AGENTS.md` as the active repository rule set.
-- Keep Memory Bank synchronized to code-visible behavior plus confirmed roadmap documents.
-- Preserve the user's current working-tree intent while rebasing on top of the latest remote `main`.
+- Update only package-manager related files for this task and avoid unrelated tooling migrations.
+- Prefer a full migration with regenerated artifacts instead of a metadata-only switch.
 
 ## Next Actions
-- Finish conflict resolution during rebase.
-- Continue the rebase, then push the updated `main` branch to `origin`.
+- Run Biome against the changed non-Markdown files where the tool supports the file type.
+- Refresh Memory Bank summaries and progress tracking to match the completed package-manager migration.

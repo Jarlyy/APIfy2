@@ -22,8 +22,8 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 ### 3. Запустите приложение (2 минуты)
 
 ```bash
-pnpm install
-pnpm dev
+bun install
+bun dev
 ```
 
 Откройте http://localhost:3000
