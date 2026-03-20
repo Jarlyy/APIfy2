@@ -10,6 +10,7 @@
 - The repository now uses Biome as the active lint tool, and `bun run lint` completes successfully.
 - Dashboard tab navigation was made responsive so the analytics tab remains reachable on narrower layouts.
 - The full analytics workspace content has been restored after the placeholder regression in `MainWorkspace`.
+- Re-running a saved test from `History` or `Favorites` now switches back to the testing tab without a forced page reload.
 
 ## Known Issues
 - `bun` is installed locally, but the sandbox shell still does not expose it in `PATH`, so Bun-based commands should use `C:\Users\Admin\.bun\bin\bun.exe` until the terminal session is restarted.
@@ -18,6 +19,7 @@
 - `biome.json` contains targeted rule relaxations for legacy patterns (`forEach`, non-null assertions, some a11y checks) so that the codebase can pass lint without an immediate large refactor.
 
 ## Changelog
+- 2026-03-20: Removed the forced page reload from the `History`/`Favorites` to `Testing` handoff by adding shared pending-test state helpers.
 - 2026-03-20: Restored `components/AnalyticsTab.tsx` and reconnected the analytics tab in `MainWorkspace`.
 - 2026-03-20: Fixed responsive dashboard header navigation so the analytics tab no longer disappears from view on compact widths.
 - 2026-03-20: Switched repository lint tooling from ESLint to Biome, added `biome.json`, updated `package.json` scripts, and auto-formatted the supported codebase files.

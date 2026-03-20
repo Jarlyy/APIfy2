@@ -3,6 +3,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { queuePendingTestData } from "@/lib/pending-test-data";
 import {
   type TestHistoryItem,
   clearTestHistory,
@@ -156,7 +157,7 @@ export default function HistoryTab() {
     };
 
     // Сохраняем данные в localStorage для передачи между компонентами
-    localStorage.setItem("pendingTestData", JSON.stringify(testData));
+    queuePendingTestData(testData);
 
     // Переходим на вкладку тестирования
     const url = new URL(window.location.href);
@@ -164,7 +165,6 @@ export default function HistoryTab() {
     window.history.pushState({}, "", url.toString());
 
     // Перезагружаем страницу чтобы данные подтянулись
-    window.location.reload();
   };
 
   if (loading) {

@@ -16,11 +16,13 @@ Shift focus from the completed documentation/tooling alignment work to the remai
 - The analytics tab was not removed from the codebase; the immediate UX issue was the non-responsive dashboard header, where tabs could slide out of view on narrower widths.
 - `components/Header.tsx` has been updated so the dashboard tabs stay accessible via horizontal scrolling on compact layouts.
 - The working analytics content has now been restored by bringing back `components/AnalyticsTab.tsx` and reconnecting it in `components/MainWorkspace.tsx`.
+- Re-running tests from `History` and `Favorites` no longer requires a full page reload; the dashboard now consumes pending test data through a shared client-side event flow.
 
 ## Decisions
 - Treat the root `AGENTS.md` as the active repository rule set.
 - Prefer a full migration with regenerated artifacts instead of a metadata-only switch.
 - Align lint tooling pragmatically: switch to Biome now, preserve app behavior, and defer deeper code-health refactors that are not required to make the lint workflow operational.
+- Prefer workflow polish that removes disruptive full-page reloads from the dashboard experience when equivalent client-side state handoff is feasible.
 
 ## Next Actions
 - Keep project progress at 90% while `DEL-006` remains the only unfinished deliverable.

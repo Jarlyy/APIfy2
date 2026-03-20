@@ -3,10 +3,14 @@
 import Header from "@/components/Header";
 import MainWorkspace from "@/components/MainWorkspace";
 import { useAuth } from "@/hooks/useAuth";
+import {
+  PENDING_TEST_DATA_EVENT,
+  type PendingTestData,
+  readPendingTestData,
+} from "@/lib/pending-test-data";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 
-// Отключаем статическую генерацию для этой страницы
 export const dynamic = "force-dynamic";
 
 function DashboardContent() {
@@ -14,7 +18,7 @@ function DashboardContent() {
   const searchParams = useSearchParams();
   const tabFromUrl = searchParams.get("tab");
   const [activeTab, setActiveTab] = useState(tabFromUrl || "testing");
-  const [testData, setTestData] = useState<any>(null);
+  const [testData, setTestData] = useState<PendingTestData | null>(null);
 
   useEffect(() => {
     if (tabFromUrl) {
@@ -22,20 +26,23 @@ function DashboardContent() {
     }
   }, [tabFromUrl]);
 
-  // Проверяем наличие данных теста из localStorage при загрузке
   useEffect(() => {
-    const pendingTestData = localStorage.getItem("pendingTestData");
-    if (pendingTestData) {
-      try {
-        const parsedData = JSON.parse(pendingTestData);
-        setTestData(parsedData);
-        // Очищаем данные из localStorage после использования
-        localStorage.removeItem("pendingTestData");
-      } catch (error) {
-        console.error("Ошибка парсинга данных теста:", error);
-        localStorage.removeItem("pendingTestData");
+    const syncPendingTestData = () => {
+      const parsedData = readPendingTestData();
+      if (!parsedData) {
+        return;
       }
-    }
+
+      setTestData(parsedData);
+      setActiveTab("testing");
+    };
+
+    syncPendingTestData();
+    window.addEventListener(PENDING_TEST_DATA_EVENT, syncPendingTestData);
+
+    return () => {
+      window.removeEventListener(PENDING_TEST_DATA_EVENT, syncPendingTestData);
+    };
   }, []);
 
   if (loading) {

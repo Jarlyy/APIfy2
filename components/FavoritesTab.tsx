@@ -9,6 +9,7 @@ import {
   getFavorites,
   removeFromFavorites,
 } from "@/lib/favorites";
+import { queuePendingTestData } from "@/lib/pending-test-data";
 import {
   CheckCircle,
   Heart,
@@ -139,7 +140,7 @@ export default function FavoritesTab({ userId }: FavoritesTabProps) {
     };
 
     // Сохраняем данные в localStorage для передачи между компонентами
-    localStorage.setItem("pendingTestData", JSON.stringify(testData));
+    queuePendingTestData(testData);
 
     // Переходим на вкладку тестирования
     const url = new URL(window.location.href);
@@ -147,7 +148,6 @@ export default function FavoritesTab({ userId }: FavoritesTabProps) {
     window.history.pushState({}, "", url.toString());
 
     // Перезагружаем страницу чтобы данные подтянулись
-    window.location.reload();
   };
 
   if (loading) {
