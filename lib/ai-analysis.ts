@@ -7,7 +7,7 @@ export interface AnalysisRequest {
   apiUrl?: string;
   httpMethod?: string;
   httpStatus?: number;
-  aiProvider?: 'gemini' | 'huggingface';
+  aiProvider?: "gemini" | "huggingface";
 }
 
 export interface AnalysisResult {
@@ -17,12 +17,14 @@ export interface AnalysisResult {
 }
 
 // Анализ ответа API через Google Gemini AI
-export async function analyzeApiResponse(request: AnalysisRequest): Promise<AnalysisResult> {
+export async function analyzeApiResponse(
+  request: AnalysisRequest,
+): Promise<AnalysisResult> {
   try {
-    const response = await fetch('/api/ai/analyze-response', {
-      method: 'POST',
+    const response = await fetch("/api/ai/analyze-response", {
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
       body: JSON.stringify(request),
     });
@@ -34,13 +36,13 @@ export async function analyzeApiResponse(request: AnalysisRequest): Promise<Anal
     const result = await response.json();
     return result;
   } catch (error) {
-    console.error('Error analyzing API response:', error);
-    
+    console.error("Error analyzing API response:", error);
+
     // Fallback анализ
     return {
       analysis: generateSimpleAnalysis(request),
-      error: 'Не удалось получить AI анализ, используется упрощенный анализ',
-      fallback: true
+      error: "Не удалось получить AI анализ, используется упрощенный анализ",
+      fallback: true,
     };
   }
 }
@@ -53,49 +55,49 @@ export async function testGeminiApi(prompt?: string): Promise<{
   details?: string;
 }> {
   try {
-    const response = await fetch('/api/test-gemini-direct', {
-      method: 'POST',
+    const response = await fetch("/api/test-gemini-direct", {
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
-      body: JSON.stringify({ prompt })
-    })
+      body: JSON.stringify({ prompt }),
+    });
 
-    const data = await response.json()
-    
+    const data = await response.json();
+
     if (!response.ok) {
       return {
         success: false,
-        error: data.error || 'Неизвестная ошибка',
-        details: data.details
-      }
+        error: data.error || "Неизвестная ошибка",
+        details: data.details,
+      };
     }
 
     return {
       success: true,
-      response: data.response
-    }
+      response: data.response,
+    };
   } catch (error) {
     return {
       success: false,
-      error: 'Ошибка сети',
-      details: error instanceof Error ? error.message : 'Неизвестная ошибка'
-    }
+      error: "Ошибка сети",
+      details: error instanceof Error ? error.message : "Неизвестная ошибка",
+    };
   }
 }
 
 // Простой анализ без AI
 function generateSimpleAnalysis(request: AnalysisRequest): string {
   const { actualResponse, httpStatus, httpMethod } = request;
-  
-  let analysis = '';
+
+  let analysis = "";
 
   // Анализ статуса
   if (httpStatus) {
     if (httpStatus >= 200 && httpStatus < 300) {
-      analysis += '✅ Успешный ответ. ';
+      analysis += "✅ Успешный ответ. ";
     } else if (httpStatus >= 400) {
-      analysis += '❌ Ошибка в запросе. ';
+      analysis += "❌ Ошибка в запросе. ";
     }
   }
 
@@ -106,7 +108,7 @@ function generateSimpleAnalysis(request: AnalysisRequest): string {
 
   // Анализ содержимого
   if (actualResponse) {
-    if (typeof actualResponse === 'object' && !Array.isArray(actualResponse)) {
+    if (typeof actualResponse === "object" && !Array.isArray(actualResponse)) {
       const keys = Object.keys(actualResponse);
       analysis += `📊 Объект с ${keys.length} полями. `;
     } else if (Array.isArray(actualResponse)) {
@@ -116,19 +118,19 @@ function generateSimpleAnalysis(request: AnalysisRequest): string {
     }
   }
 
-  return analysis || '📋 Ответ получен.';
+  return analysis || "📋 Ответ получен.";
 }
 
 // Проверка доступности AI анализа
 export function isAiAnalysisEnabled(): boolean {
-  if (typeof window === 'undefined') return true; // По умолчанию включен на сервере
-  const stored = localStorage.getItem('aiAnalysisEnabled');
-  return stored === null ? true : stored === 'true'; // По умолчанию включен
+  if (typeof window === "undefined") return true; // По умолчанию включен на сервере
+  const stored = localStorage.getItem("aiAnalysisEnabled");
+  return stored === null ? true : stored === "true"; // По умолчанию включен
 }
 
 // Включение/выключение AI анализа
 export function setAiAnalysisEnabled(enabled: boolean): void {
-  if (typeof window !== 'undefined') {
-    localStorage.setItem('aiAnalysisEnabled', enabled ? 'true' : 'false');
+  if (typeof window !== "undefined") {
+    localStorage.setItem("aiAnalysisEnabled", enabled ? "true" : "false");
   }
 }

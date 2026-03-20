@@ -10,9 +10,10 @@
 ## Repo and Tooling
 - Package manager in the checked-in metadata: `bun`
 - Lockfile present: `bun.lock`
-- Lint tooling in codebase: ESLint via `next lint`
+- Lint tooling in codebase: Biome via `biome.json` and `package.json` scripts
 - Deployment files: `vercel.json`, `.vercelignore`
 - Styling/build support: `postcss.config.mjs`, `next.config.ts`
+- `bun` is installed locally at `C:\Users\Admin\.bun\bin\bun.exe`, but the sandbox shell still does not expose it via `PATH`, so commands should use the absolute binary path unless the terminal session is restarted.
 
 ## Monitoring-Specific Tech
 - Cron entry in deployment configuration for the monitoring runner.
@@ -34,5 +35,5 @@
 - Vercel is the documented deployment target.
 
 ## Tooling Mismatches To Remember
-- `AGENTS.md` requires `biome`, but Biome is not declared in `package.json`.
-- This task updates package-manager metadata and docs, so Biome should be run only for changed non-Markdown files that it supports.
+- The repository now satisfies the `AGENTS.md` package-manager and lint-tooling requirements with `bun` and `Biome`.
+- `biome.json` intentionally relaxes a small set of rules to accommodate the legacy codebase while keeping the lint command operational.

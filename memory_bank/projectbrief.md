@@ -19,13 +19,13 @@ APIfy2 is a Next.js application for API exploration, manual request execution, O
 - Vercel-oriented deployment files and Supabase SQL schema.
 
 ## Constraints
-- The repository instructions in `AGENTS.md` require `bun` and `biome`; package management is now aligned with `bun`, but lint tooling is still on ESLint rather than Biome.
-- `docs/README.md` is still absent, so there is no canonical architecture document in the location mandated by `AGENTS.md`.
 - The development server must not be started, stopped, or inspected by the agent.
+- The repository is aligned to `bun` and `Biome`, but the current Biome config includes pragmatic rule relaxations to avoid a large immediate refactor.
 
 ## Primary References
 - `AGENTS.md`
 - `README.md`
+- `docs/README.md`
 - `docs/prd.md`
 - `docs/development-plan.md`
 - `supabase/schema.sql`
@@ -44,7 +44,7 @@ APIfy2 is a Next.js application for API exploration, manual request execution, O
 | DEL-004 | AI-assisted analysis and test generation flows | completed | 15 |
 | DEL-005 | Monitoring, alerting, and uptime analytics workflows | completed | 15 |
 | DEL-006 | Dashboard productivity features: history, favorites, workspace polish | in_progress | 10 |
-| DEL-007 | Operational documentation and tooling alignment with AGENTS requirements | in_progress | 10 |
+| DEL-007 | Operational documentation and tooling alignment with AGENTS requirements | completed | 10 |
 
 ## Project Completion
-Project completion based on completed deliverables: 80%.
+Project completion based on completed deliverables: 90%.

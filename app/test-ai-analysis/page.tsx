@@ -1,15 +1,21 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Loader2, Brain, Zap } from 'lucide-react'
-import AiAnalysis from '@/components/AiAnalysis'
+import AiAnalysis from "@/components/AiAnalysis";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Brain, Loader2, Zap } from "lucide-react";
+import { useState } from "react";
 
 export default function TestAiAnalysisPage() {
-  const [showGeminiAnalysis, setShowGeminiAnalysis] = useState(false)
-  const [showHfAnalysis, setShowHfAnalysis] = useState(false)
+  const [showGeminiAnalysis, setShowGeminiAnalysis] = useState(false);
+  const [showHfAnalysis, setShowHfAnalysis] = useState(false);
 
   // Тестовые данные для анализа
   const testResponse = {
@@ -24,8 +30,8 @@ export default function TestAiAnalysisPage() {
     public_repos: 8,
     public_gists: 8,
     followers: 9001,
-    following: 9
-  }
+    following: 9,
+  };
 
   return (
     <div className="container mx-auto p-6 max-w-4xl">
@@ -65,14 +71,14 @@ export default function TestAiAnalysisPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <Button 
+              <Button
                 onClick={() => setShowGeminiAnalysis(true)}
                 disabled={showGeminiAnalysis}
                 className="w-full"
               >
                 Анализировать через Gemini
               </Button>
-              
+
               {showGeminiAnalysis && (
                 <AiAnalysis
                   actualResponse={testResponse}
@@ -99,7 +105,7 @@ export default function TestAiAnalysisPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <Button 
+              <Button
                 onClick={() => setShowHfAnalysis(true)}
                 disabled={showHfAnalysis}
                 className="w-full"
@@ -107,7 +113,7 @@ export default function TestAiAnalysisPage() {
               >
                 Анализировать через GPT OSS
               </Button>
-              
+
               {showHfAnalysis && (
                 <AiAnalysis
                   actualResponse={testResponse}
@@ -128,15 +134,22 @@ export default function TestAiAnalysisPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-2 text-sm">
-              <p><strong>Gemini:</strong> Быстрый анализ (2-5 сек), стабильная работа</p>
-              <p><strong>GPT OSS 120B:</strong> Более детальный анализ (10-30 сек), мощная модель</p>
+              <p>
+                <strong>Gemini:</strong> Быстрый анализ (2-5 сек), стабильная
+                работа
+              </p>
+              <p>
+                <strong>GPT OSS 120B:</strong> Более детальный анализ (10-30
+                сек), мощная модель
+              </p>
               <p className="text-muted-foreground">
-                Оба провайдера анализируют один и тот же ответ, но могут давать разные инсайты
+                Оба провайдера анализируют один и тот же ответ, но могут давать
+                разные инсайты
               </p>
             </div>
           </CardContent>
         </Card>
       </div>
     </div>
-  )
+  );
 }

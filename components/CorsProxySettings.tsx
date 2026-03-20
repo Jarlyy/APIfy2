@@ -1,7 +1,11 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { CORS_PROXIES, getCurrentProxy, setCurrentProxy } from '@/lib/cors-proxy';
+import {
+  CORS_PROXIES,
+  getCurrentProxy,
+  setCurrentProxy,
+} from "@/lib/cors-proxy";
+import { useEffect, useState } from "react";
 
 export default function CorsProxySettings() {
   const [selectedProxy, setSelectedProxy] = useState(getCurrentProxy());
@@ -40,7 +44,7 @@ export default function CorsProxySettings() {
           ✕ Закрыть
         </button>
       </div>
-      
+
       <div className="space-y-2">
         {CORS_PROXIES.map((proxy) => (
           <label
@@ -59,7 +63,7 @@ export default function CorsProxySettings() {
               <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
                 {proxy.name}
               </span>
-              {proxy.value === 'local' && (
+              {proxy.value === "local" && (
                 <span className="ml-2 rounded bg-green-100 px-2 py-0.5 text-xs text-green-800 dark:bg-green-900/30 dark:text-green-400">
                   Быстро и надёжно
                 </span>
@@ -68,15 +72,17 @@ export default function CorsProxySettings() {
           </label>
         ))}
       </div>
-      
+
       <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">
-        💡 Локальный прокси работает через ваш Next.js сервер и полностью поддерживается на Vercel
+        💡 Локальный прокси работает через ваш Next.js сервер и полностью
+        поддерживается на Vercel
       </p>
-      
-      {selectedProxy === 'local' && (
+
+      {selectedProxy === "local" && (
         <div className="mt-2 rounded-md bg-blue-50 p-2 dark:bg-blue-900/20">
           <p className="text-xs text-blue-700 dark:text-blue-300">
-            <strong>Vercel:</strong> Таймаут 8 сек, размер ответа до 6MB (Hobby) / 50MB (Pro)
+            <strong>Vercel:</strong> Таймаут 8 сек, размер ответа до 6MB (Hobby)
+            / 50MB (Pro)
           </p>
         </div>
       )}

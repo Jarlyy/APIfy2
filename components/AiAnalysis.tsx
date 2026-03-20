@@ -1,7 +1,11 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { analyzeApiResponse, isAiAnalysisEnabled, setAiAnalysisEnabled } from '@/lib/ai-analysis';
+import {
+  analyzeApiResponse,
+  isAiAnalysisEnabled,
+  setAiAnalysisEnabled,
+} from "@/lib/ai-analysis";
+import { useEffect, useState } from "react";
 
 interface AiAnalysisProps {
   actualResponse: any;
@@ -10,7 +14,7 @@ interface AiAnalysisProps {
   apiUrl?: string;
   httpMethod?: string;
   httpStatus?: number;
-  aiProvider?: 'gemini' | 'huggingface';
+  aiProvider?: "gemini" | "huggingface";
   onAnalysisComplete?: (analysis: string) => void;
 }
 
@@ -21,12 +25,12 @@ export default function AiAnalysis({
   apiUrl,
   httpMethod,
   httpStatus,
-  aiProvider = 'huggingface',
-  onAnalysisComplete
+  aiProvider = "huggingface",
+  onAnalysisComplete,
 }: AiAnalysisProps) {
-  const [analysis, setAnalysis] = useState<string>('');
+  const [analysis, setAnalysis] = useState<string>("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string>('');
+  const [error, setError] = useState<string>("");
   const [enabled, setEnabled] = useState(isAiAnalysisEnabled());
 
   useEffect(() => {
@@ -39,8 +43,8 @@ export default function AiAnalysis({
     if (!actualResponse) return;
 
     setLoading(true);
-    setError('');
-    setAnalysis('');
+    setError("");
+    setAnalysis("");
 
     try {
       const result = await analyzeApiResponse({
@@ -50,22 +54,25 @@ export default function AiAnalysis({
         apiUrl,
         httpMethod,
         httpStatus,
-        aiProvider
+        aiProvider,
       });
 
       setAnalysis(result.analysis);
       if (result.error) {
         setError(result.error);
       }
-      
+
       // Показываем информацию о fallback режиме
       if (result.fallback) {
-        setError(result.error || 'Используется упрощенный анализ (AI недоступен)');
+        setError(
+          result.error || "Используется упрощенный анализ (AI недоступен)",
+        );
       }
-      
+
       onAnalysisComplete?.(result.analysis);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Ошибка анализа';
+      const errorMessage =
+        err instanceof Error ? err.message : "Ошибка анализа";
       setError(errorMessage);
     } finally {
       setLoading(false);
@@ -76,12 +83,12 @@ export default function AiAnalysis({
     const newEnabled = !enabled;
     setEnabled(newEnabled);
     setAiAnalysisEnabled(newEnabled);
-    
+
     if (newEnabled && actualResponse) {
       performAnalysis();
     } else {
-      setAnalysis('');
-      setError('');
+      setAnalysis("");
+      setError("");
     }
   };
 
@@ -107,9 +114,10 @@ export default function AiAnalysis({
     <div className="rounded-md border border-blue-200 bg-blue-50 p-3 dark:border-blue-800 dark:bg-blue-900/20">
       <div className="flex items-center justify-between mb-2">
         <h4 className="text-sm font-medium text-blue-900 dark:text-blue-100 flex items-center gap-2">
-          🤖 AI Анализ ответа ({aiProvider === 'gemini' ? 'Gemini' : 'GPT OSS 120B'})
+          🤖 AI Анализ ответа (
+          {aiProvider === "gemini" ? "Gemini" : "GPT OSS 120B"})
           {loading && (
-            <div className="animate-spin h-3 w-3 border border-blue-600 border-t-transparent rounded-full"></div>
+            <div className="animate-spin h-3 w-3 border border-blue-600 border-t-transparent rounded-full" />
           )}
         </h4>
         <button

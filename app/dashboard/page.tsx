@@ -1,43 +1,43 @@
-'use client'
+"use client";
 
-import { useState, useEffect, Suspense } from 'react'
-import { useSearchParams } from 'next/navigation'
-import Header from '@/components/Header'
-import MainWorkspace from '@/components/MainWorkspace'
-import { useAuth } from '@/hooks/useAuth'
+import Header from "@/components/Header";
+import MainWorkspace from "@/components/MainWorkspace";
+import { useAuth } from "@/hooks/useAuth";
+import { useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
 
 // Отключаем статическую генерацию для этой страницы
-export const dynamic = 'force-dynamic'
+export const dynamic = "force-dynamic";
 
 function DashboardContent() {
-  const { user, loading } = useAuth()
-  const searchParams = useSearchParams()
-  const tabFromUrl = searchParams.get('tab')
-  const [activeTab, setActiveTab] = useState(tabFromUrl || 'testing')
-  const [testData, setTestData] = useState<any>(null)
+  const { user, loading } = useAuth();
+  const searchParams = useSearchParams();
+  const tabFromUrl = searchParams.get("tab");
+  const [activeTab, setActiveTab] = useState(tabFromUrl || "testing");
+  const [testData, setTestData] = useState<any>(null);
 
   useEffect(() => {
     if (tabFromUrl) {
-      setActiveTab(tabFromUrl)
+      setActiveTab(tabFromUrl);
     }
-  }, [tabFromUrl])
+  }, [tabFromUrl]);
 
   // Проверяем наличие данных теста из localStorage при загрузке
   useEffect(() => {
-    const pendingTestData = localStorage.getItem('pendingTestData')
+    const pendingTestData = localStorage.getItem("pendingTestData");
     if (pendingTestData) {
       try {
-        const parsedData = JSON.parse(pendingTestData)
-        setTestData(parsedData)
+        const parsedData = JSON.parse(pendingTestData);
+        setTestData(parsedData);
         // Очищаем данные из localStorage после использования
-        localStorage.removeItem('pendingTestData')
+        localStorage.removeItem("pendingTestData");
       } catch (error) {
-        console.error('Ошибка парсинга данных теста:', error)
-        localStorage.removeItem('pendingTestData')
+        console.error("Ошибка парсинга данных теста:", error);
+        localStorage.removeItem("pendingTestData");
       }
     }
-  }, [])
-  
+  }, []);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-zinc-50 dark:bg-zinc-900">
@@ -48,34 +48,36 @@ function DashboardContent() {
           </div>
         </main>
       </div>
-    )
+    );
   }
 
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-900">
       <Header activeTab={activeTab} onTabChange={setActiveTab} />
-      <MainWorkspace 
-        userId={user?.id || 'guest-user'} 
+      <MainWorkspace
+        userId={user?.id || "guest-user"}
         activeTab={activeTab}
         onTabChange={setActiveTab}
         testData={testData}
       />
     </div>
-  )
+  );
 }
 
 export default function DashboardPage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-zinc-50 dark:bg-zinc-900">
-        <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <p className="text-zinc-600 dark:text-zinc-400">Загрузка...</p>
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-zinc-50 dark:bg-zinc-900">
+          <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+            <div className="text-center">
+              <p className="text-zinc-600 dark:text-zinc-400">Загрузка...</p>
+            </div>
           </div>
         </div>
-      </div>
-    }>
+      }
+    >
       <DashboardContent />
     </Suspense>
-  )
+  );
 }

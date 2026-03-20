@@ -1,16 +1,18 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { AIProviderFactory } from '@/lib/ai-providers';
+import { AIProviderFactory } from "@/lib/ai-providers";
+import { type NextRequest, NextResponse } from "next/server";
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
-  const provider = searchParams.get('provider') || 'gemini';
-  const service = searchParams.get('service') || 'GitHub';
+  const provider = searchParams.get("provider") || "gemini";
+  const service = searchParams.get("service") || "GitHub";
 
   try {
     console.log(`Тестируем провайдер: ${provider} для сервиса: ${service}`);
-    
-    const aiProvider = AIProviderFactory.createProvider(provider as 'gemini' | 'huggingface');
-    
+
+    const aiProvider = AIProviderFactory.createProvider(
+      provider as "gemini" | "huggingface",
+    );
+
     const prompt = `Создай 2-3 простых теста для API сервиса "${service}".
     
 КРИТИЧЕСКИ ВАЖНО:
@@ -24,7 +26,7 @@ export async function GET(request: NextRequest) {
 
     const result = await aiProvider.generateContent(prompt, {
       temperature: 0.2,
-      maxOutputTokens: 2000
+      maxOutputTokens: 2000,
     });
 
     return NextResponse.json({
@@ -32,16 +34,18 @@ export async function GET(request: NextRequest) {
       provider: aiProvider.name,
       service,
       result,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
-
   } catch (error) {
-    console.error('Ошибка тестирования провайдера:', error);
-    return NextResponse.json({
-      success: false,
-      error: error instanceof Error ? error.message : 'Неизвестная ошибка',
-      provider,
-      service
-    }, { status: 500 });
+    console.error("Ошибка тестирования провайдера:", error);
+    return NextResponse.json(
+      {
+        success: false,
+        error: error instanceof Error ? error.message : "Неизвестная ошибка",
+        provider,
+        service,
+      },
+      { status: 500 },
+    );
   }
 }

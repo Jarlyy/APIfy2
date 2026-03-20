@@ -1,27 +1,34 @@
-'use client'
+"use client";
 
-import { useState, useEffect } from 'react'
-import { AIProviderFactory } from '@/lib/ai-providers'
+import { AIProviderFactory } from "@/lib/ai-providers";
+import { useEffect, useState } from "react";
 
 interface AIProviderSelectorProps {
-  onProviderChange: (provider: 'gemini' | 'huggingface') => void
+  onProviderChange: (provider: "gemini" | "huggingface") => void;
 }
 
-export default function AIProviderSelector({ onProviderChange }: AIProviderSelectorProps) {
-  const [selectedProvider, setSelectedProvider] = useState<'gemini' | 'huggingface'>('gemini')
-  const providers = AIProviderFactory.getAvailableProviders()
+export default function AIProviderSelector({
+  onProviderChange,
+}: AIProviderSelectorProps) {
+  const [selectedProvider, setSelectedProvider] = useState<
+    "gemini" | "huggingface"
+  >("gemini");
+  const providers = AIProviderFactory.getAvailableProviders();
 
   useEffect(() => {
     // Определяем провайдер по умолчанию из переменных окружения или используем huggingface
-    const defaultProvider = (process.env.NEXT_PUBLIC_DEFAULT_AI_PROVIDER as 'gemini' | 'huggingface') || 'huggingface'
-    setSelectedProvider(defaultProvider)
-  }, [])
+    const defaultProvider =
+      (process.env.NEXT_PUBLIC_DEFAULT_AI_PROVIDER as
+        | "gemini"
+        | "huggingface") || "huggingface";
+    setSelectedProvider(defaultProvider);
+  }, []);
 
   const handleProviderChange = (value: string) => {
-    const provider = value as 'gemini' | 'huggingface'
-    setSelectedProvider(provider)
-    onProviderChange(provider)
-  }
+    const provider = value as "gemini" | "huggingface";
+    setSelectedProvider(provider);
+    onProviderChange(provider);
+  };
 
   return (
     <div className="flex items-center gap-2">
@@ -41,11 +48,21 @@ export default function AIProviderSelector({ onProviderChange }: AIProviderSelec
           ))}
         </select>
         <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
-          <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          <svg
+            className="w-4 h-4 text-gray-400"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M19 9l-7 7-7-7"
+            />
           </svg>
         </div>
       </div>
     </div>
-  )
+  );
 }
