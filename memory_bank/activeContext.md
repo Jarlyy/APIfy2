@@ -13,6 +13,9 @@ Shift focus from the completed documentation/tooling alignment work to the remai
 - `docs/README.md` now exists and documents the high-level architecture, route groups, shared modules, and key data flows required by `AGENTS.md`.
 - The repository now uses `Biome` as the canonical lint tool via `package.json` scripts and `biome.json`, and `bun run lint` passes successfully.
 - Enabling Biome on the existing codebase required auto-formatting the supported source files and relaxing a small set of legacy a11y/style rules in `biome.json`.
+- The analytics tab was not removed from the codebase; the immediate UX issue was the non-responsive dashboard header, where tabs could slide out of view on narrower widths.
+- `components/Header.tsx` has been updated so the dashboard tabs stay accessible via horizontal scrolling on compact layouts.
+- The working analytics content has now been restored by bringing back `components/AnalyticsTab.tsx` and reconnecting it in `components/MainWorkspace.tsx`.
 
 ## Decisions
 - Treat the root `AGENTS.md` as the active repository rule set.
@@ -21,4 +24,4 @@ Shift focus from the completed documentation/tooling alignment work to the remai
 
 ## Next Actions
 - Keep project progress at 90% while `DEL-006` remains the only unfinished deliverable.
-- Investigate dashboard productivity polish work, especially analytics presentation and any related UI gaps still marked as in flux.
+- Continue dashboard productivity polish work beyond the restored analytics tab, focusing on any remaining UX rough edges in the workspace.

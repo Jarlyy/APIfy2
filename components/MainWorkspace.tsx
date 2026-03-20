@@ -1,11 +1,14 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import FavoritesTab from "./FavoritesTab";
-import HistoryTab from "./HistoryTab";
-import OpenApiImport from "./OpenApiImport";
 import { UnifiedApiTester } from "./UnifiedApiTester";
+
+const OpenApiImport = dynamic(() => import("./OpenApiImport"));
+const HistoryTab = dynamic(() => import("./HistoryTab"));
+const FavoritesTab = dynamic(() => import("./FavoritesTab"));
+const AnalyticsTab = dynamic(() => import("./AnalyticsTab"));
 
 interface MainWorkspaceProps {
   userId: string;
@@ -27,7 +30,7 @@ export default function MainWorkspace({
   userId,
   initialTab = "testing",
   activeTab,
-  onTabChange,
+  onTabChange: _onTabChange,
   testData,
 }: MainWorkspaceProps) {
   const searchParams = useSearchParams();
@@ -44,45 +47,44 @@ export default function MainWorkspace({
     }
   }, [activeTab, tabFromUrl]);
 
+  const renderCurrentTab = () => {
+    switch (currentTab) {
+      case "testing":
+        return <UnifiedApiTester userId={userId} testData={testData} />;
+
+      case "favorites":
+        return <FavoritesTab userId={userId} />;
+
+      case "import":
+        return (
+          <>
+            <div className="mb-6">
+              <h1 className="text-3xl font-bold text-zinc-900 dark:text-white">
+                Импорт OpenAPI/Swagger
+              </h1>
+              <p className="mt-2 text-zinc-600 dark:text-zinc-400">
+                Загрузите спецификацию OpenAPI для автоматического создания
+                тестов
+              </p>
+            </div>
+            <OpenApiImport />
+          </>
+        );
+
+      case "analytics":
+        return <AnalyticsTab />;
+
+      case "history":
+        return <HistoryTab />;
+
+      default:
+        return <UnifiedApiTester userId={userId} testData={testData} />;
+    }
+  };
+
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-      {/* Тестирование */}
-      <div className={`${currentTab !== "testing" ? "hidden" : ""}`}>
-        <UnifiedApiTester userId={userId} testData={testData} />
-      </div>
-
-      {/* Избранное */}
-      <div className={`${currentTab !== "favorites" ? "hidden" : ""}`}>
-        <FavoritesTab userId={userId} />
-      </div>
-
-      {/* Импорт API */}
-      <div className={`${currentTab !== "import" ? "hidden" : ""}`}>
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold text-zinc-900 dark:text-white">
-            Импорт OpenAPI/Swagger
-          </h1>
-          <p className="mt-2 text-zinc-600 dark:text-zinc-400">
-            Загрузите спецификацию OpenAPI для автоматического создания тестов
-          </p>
-        </div>
-        <OpenApiImport />
-      </div>
-
-      {/* Аналитика */}
-      <div className={`${currentTab !== "analytics" ? "hidden" : ""}`}>
-        <div className="text-center py-12">
-          <h3 className="text-lg font-semibold mb-2">Аналитика тестов</h3>
-          <p className="text-muted-foreground">
-            Здесь будет отображаться статистика ваших API тестов
-          </p>
-        </div>
-      </div>
-
-      {/* История */}
-      <div className={`${currentTab !== "history" ? "hidden" : ""}`}>
-        <HistoryTab />
-      </div>
+      {renderCurrentTab()}
     </div>
   );
 }

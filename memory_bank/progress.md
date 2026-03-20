@@ -8,6 +8,8 @@
 - The `pnpm` to `bun` migration commit has been reviewed against the current tree and Memory Bank has been synchronized to that state.
 - `docs/README.md` has been created as the canonical high-level architecture source required by `AGENTS.md`.
 - The repository now uses Biome as the active lint tool, and `bun run lint` completes successfully.
+- Dashboard tab navigation was made responsive so the analytics tab remains reachable on narrower layouts.
+- The full analytics workspace content has been restored after the placeholder regression in `MainWorkspace`.
 
 ## Known Issues
 - `bun` is installed locally, but the sandbox shell still does not expose it in `PATH`, so Bun-based commands should use `C:\Users\Admin\.bun\bin\bun.exe` until the terminal session is restarted.
@@ -16,6 +18,8 @@
 - `biome.json` contains targeted rule relaxations for legacy patterns (`forEach`, non-null assertions, some a11y checks) so that the codebase can pass lint without an immediate large refactor.
 
 ## Changelog
+- 2026-03-20: Restored `components/AnalyticsTab.tsx` and reconnected the analytics tab in `MainWorkspace`.
+- 2026-03-20: Fixed responsive dashboard header navigation so the analytics tab no longer disappears from view on compact widths.
 - 2026-03-20: Switched repository lint tooling from ESLint to Biome, added `biome.json`, updated `package.json` scripts, and auto-formatted the supported codebase files.
 - 2026-03-20: Added `docs/README.md` as the canonical architecture overview and synchronized Memory Bank references to it.
 - 2026-03-20: Installed `bun` locally, ran `Biome` against `package.json`, and auto-fixed the file formatting.

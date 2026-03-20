@@ -1,7 +1,14 @@
 {
   "$schema": "https://biomejs.dev/schemas/1.9.4/schema.json",
   "files": {
-    "ignore": ["bun.lock", ".next", "out", "build", "node_modules"]
+    "ignore": [
+      "bun.lock",
+      ".next",
+      "out",
+      "build",
+      "node_modules",
+      "next-env.d.ts"
+    ]
   },
   "formatter": {
     "enabled": true,

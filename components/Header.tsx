@@ -36,18 +36,19 @@ export default function Header({
   return (
     <header className="border-b border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-800">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="flex h-16 items-center justify-between">
-          <div className="flex items-center gap-8">
+        <div className="flex flex-col gap-3 py-4 md:h-16 md:flex-row md:items-center md:justify-between md:py-0">
+          <div className="flex min-w-0 flex-col gap-3 md:flex-row md:items-center md:gap-8">
             <Link
               href="/dashboard"
-              className="text-xl font-bold text-zinc-900 dark:text-white"
+              className="shrink-0 text-xl font-bold text-zinc-900 dark:text-white"
             >
               APIfy
             </Link>
-            <nav className="flex gap-4">
+            <nav className="-mx-1 flex min-w-0 gap-2 overflow-x-auto px-1 pb-1 md:mx-0 md:gap-4 md:overflow-visible md:px-0 md:pb-0">
               <button
+                type="button"
                 onClick={() => handleTabClick("testing")}
-                className={`text-sm font-medium transition-colors ${
+                className={`shrink-0 whitespace-nowrap text-sm font-medium transition-colors ${
                   currentTab === "testing"
                     ? "text-zinc-900 dark:text-white border-b-2 border-blue-500"
                     : "text-zinc-700 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-white"
@@ -56,8 +57,9 @@ export default function Header({
                 Тестирование
               </button>
               <button
+                type="button"
                 onClick={() => handleTabClick("favorites")}
-                className={`text-sm font-medium transition-colors ${
+                className={`shrink-0 whitespace-nowrap text-sm font-medium transition-colors ${
                   currentTab === "favorites"
                     ? "text-zinc-900 dark:text-white border-b-2 border-blue-500"
                     : "text-zinc-700 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-white"
@@ -66,8 +68,9 @@ export default function Header({
                 Избранное
               </button>
               <button
+                type="button"
                 onClick={() => handleTabClick("import")}
-                className={`text-sm font-medium transition-colors ${
+                className={`shrink-0 whitespace-nowrap text-sm font-medium transition-colors ${
                   currentTab === "import"
                     ? "text-zinc-900 dark:text-white border-b-2 border-blue-500"
                     : "text-zinc-700 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-white"
@@ -76,8 +79,9 @@ export default function Header({
                 Импорт API
               </button>
               <button
+                type="button"
                 onClick={() => handleTabClick("analytics")}
-                className={`text-sm font-medium transition-colors ${
+                className={`shrink-0 whitespace-nowrap text-sm font-medium transition-colors ${
                   currentTab === "analytics"
                     ? "text-zinc-900 dark:text-white border-b-2 border-blue-500"
                     : "text-zinc-700 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-white"
@@ -86,8 +90,9 @@ export default function Header({
                 Аналитика
               </button>
               <button
+                type="button"
                 onClick={() => handleTabClick("history")}
-                className={`text-sm font-medium transition-colors ${
+                className={`shrink-0 whitespace-nowrap text-sm font-medium transition-colors ${
                   currentTab === "history"
                     ? "text-zinc-900 dark:text-white border-b-2 border-blue-500"
                     : "text-zinc-700 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-white"
@@ -98,7 +103,7 @@ export default function Header({
             </nav>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 md:justify-end">
             {loading ? (
               <div className="text-sm text-zinc-500 dark:text-zinc-400">
                 Загрузка...
@@ -109,6 +114,7 @@ export default function Header({
                   {user.email}
                 </span>
                 <button
+                  type="button"
                   onClick={handleSignOut}
                   className="text-sm text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200"
                 >
