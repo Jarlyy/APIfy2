@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   type MonitorConfig,
   type MonitoringRun,
@@ -47,6 +48,9 @@ const STATUS_COLORS = {
   pending: "#f59e0b",
 };
 
+type HttpMethod = "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
+type AuthType = "none" | "bearer" | "api-key" | "basic";
+
 export default function AnalyticsTab() {
   const [loading, setLoading] = useState(true);
   const [history, setHistory] = useState<TestHistoryItem[]>([]);
@@ -68,8 +72,19 @@ export default function AnalyticsTab() {
   const [newMonitor, setNewMonitor] = useState({
     name: "",
     url: "",
+    method: "GET" as HttpMethod,
+    headers: "{}",
+    body: "",
+    authType: "none" as AuthType,
+    bearerToken: "",
+    apiKey: "",
+    apiKeyHeader: "X-API-Key",
+    basicUsername: "",
+    basicPassword: "",
     interval_minutes: 1440,
+    expected_status: 200,
     sla_target: 99.9,
+    alert_on_failure: true,
   });
 
   useEffect(() => {
@@ -280,6 +295,38 @@ export default function AnalyticsTab() {
     setSelectedEndpoint("all");
   };
 
+  const buildMonitorHeaders = () => {
+    const parsedHeaders = newMonitor.headers.trim()
+      ? (JSON.parse(newMonitor.headers) as Record<string, string>)
+      : {};
+
+    const normalizedHeaders = Object.fromEntries(
+      Object.entries(parsedHeaders).map(([key, value]) => [key, String(value)]),
+    );
+
+    if (newMonitor.authType === "bearer" && newMonitor.bearerToken.trim()) {
+      normalizedHeaders.Authorization = `Bearer ${newMonitor.bearerToken.trim()}`;
+    }
+
+    if (
+      newMonitor.authType === "api-key" &&
+      newMonitor.apiKeyHeader.trim() &&
+      newMonitor.apiKey.trim()
+    ) {
+      normalizedHeaders[newMonitor.apiKeyHeader.trim()] =
+        newMonitor.apiKey.trim();
+    }
+
+    if (newMonitor.authType === "basic" && newMonitor.basicUsername.trim()) {
+      const credentials = btoa(
+        `${newMonitor.basicUsername}:${newMonitor.basicPassword}`,
+      );
+      normalizedHeaders.Authorization = `Basic ${credentials}`;
+    }
+
+    return normalizedHeaders;
+  };
+
   const handleCreateMonitor = async () => {
     if (!newMonitor.name.trim() || !newMonitor.url.trim()) return;
 
@@ -287,11 +334,31 @@ export default function AnalyticsTab() {
     setMonitorError(null);
     setMonitorSuccess(null);
 
+    let monitorHeaders: Record<string, string>;
+
+    try {
+      monitorHeaders = buildMonitorHeaders();
+    } catch (error) {
+      setMonitorError(
+        `Некорректный JSON в заголовках: ${error instanceof Error ? error.message : "неизвестная ошибка"}`,
+      );
+      setCreatingMonitor(false);
+      return;
+    }
+
     const result = await createMonitor({
       name: newMonitor.name.trim(),
       url: newMonitor.url.trim(),
+      method: newMonitor.method,
+      headers: monitorHeaders,
+      body:
+        newMonitor.method === "GET" || !newMonitor.body.trim()
+          ? null
+          : newMonitor.body,
       interval_minutes: newMonitor.interval_minutes,
+      expected_status: newMonitor.expected_status,
       sla_target: newMonitor.sla_target,
+      alert_on_failure: newMonitor.alert_on_failure,
     });
 
     if (result.success && result.data) {
@@ -300,8 +367,19 @@ export default function AnalyticsTab() {
       setNewMonitor({
         name: "",
         url: "",
+        method: "GET",
+        headers: "{}",
+        body: "",
+        authType: "none",
+        bearerToken: "",
+        apiKey: "",
+        apiKeyHeader: "X-API-Key",
+        basicUsername: "",
+        basicPassword: "",
         interval_minutes: 1440,
+        expected_status: 200,
         sla_target: 99.9,
+        alert_on_failure: true,
       });
       setMonitorSuccess("Монитор успешно создан.");
     } else {

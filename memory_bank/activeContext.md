@@ -17,6 +17,8 @@ Shift focus from the completed documentation/tooling alignment work to the remai
 - `components/Header.tsx` has been updated so the dashboard tabs stay accessible via horizontal scrolling on compact layouts.
 - The working analytics content has now been restored by bringing back `components/AnalyticsTab.tsx` and reconnecting it in `components/MainWorkspace.tsx`.
 - Re-running tests from `History` and `Favorites` no longer requires a full page reload; the dashboard now consumes pending test data through a shared client-side event flow.
+- The monitoring data layer now accepts richer request configuration during monitor creation: HTTP method, custom headers, optional body, expected status, and failure alert preferences.
+- `components/AnalyticsTab.tsx` has in-progress groundwork for monitor-creation parity with manual testing, including auth-related state (`bearer`, `api-key`, `basic`) and header assembly logic.
 
 ## Decisions
 - Treat the root `AGENTS.md` as the active repository rule set.
@@ -27,3 +29,4 @@ Shift focus from the completed documentation/tooling alignment work to the remai
 ## Next Actions
 - Keep project progress at 90% while `DEL-006` remains the only unfinished deliverable.
 - Continue dashboard productivity polish work beyond the restored analytics tab, focusing on any remaining UX rough edges in the workspace.
+- Finish the monitor creation UI in the analytics tab so scheduled monitors expose the same request configuration controls as manual testing.

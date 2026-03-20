@@ -11,14 +11,17 @@
 - Dashboard tab navigation was made responsive so the analytics tab remains reachable on narrower layouts.
 - The full analytics workspace content has been restored after the placeholder regression in `MainWorkspace`.
 - Re-running a saved test from `History` or `Favorites` now switches back to the testing tab without a forced page reload.
+- Monitor creation plumbing now supports richer request payloads in the data layer, including method, headers, body, expected status, and alert preferences.
 
 ## Known Issues
 - `bun` is installed locally, but the sandbox shell still does not expose it in `PATH`, so Bun-based commands should use `C:\Users\Admin\.bun\bin\bun.exe` until the terminal session is restarted.
 - External font fetching via `next/font` may still fail in restricted network environments.
 - The working tree includes active dashboard changes, including deletion of `components/AnalyticsTab.tsx`, so analytics presentation should be treated as in flux until the surrounding UI changes are finalized.
 - `biome.json` contains targeted rule relaxations for legacy patterns (`forEach`, non-null assertions, some a11y checks) so that the codebase can pass lint without an immediate large refactor.
+- Monitor creation in the analytics tab is only partially aligned with manual testing: the underlying state and persistence support are present, but the expanded UI controls still need to be wired into the form.
 
 ## Changelog
+- 2026-03-20: Began extending scheduled monitor creation toward manual-test parity by adding richer monitor payload support and auth/header assembly groundwork.
 - 2026-03-20: Removed the forced page reload from the `History`/`Favorites` to `Testing` handoff by adding shared pending-test state helpers.
 - 2026-03-20: Restored `components/AnalyticsTab.tsx` and reconnected the analytics tab in `MainWorkspace`.
 - 2026-03-20: Fixed responsive dashboard header navigation so the analytics tab no longer disappears from view on compact widths.

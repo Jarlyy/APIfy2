@@ -51,9 +51,12 @@ export async function createMonitor(input: {
   name: string;
   url: string;
   method?: string;
+  headers?: Record<string, string> | null;
+  body?: string | null;
   interval_minutes?: number;
   expected_status?: number;
   sla_target?: number;
+  alert_on_failure?: boolean;
 }) {
   const supabase = createClient();
   const {
@@ -66,9 +69,12 @@ export async function createMonitor(input: {
     name: input.name,
     url: input.url,
     method: input.method || "GET",
+    headers: input.headers || null,
+    body: input.body || null,
     interval_minutes: input.interval_minutes || 1440,
     expected_status: input.expected_status || 200,
     sla_target: input.sla_target || 99.9,
+    alert_on_failure: input.alert_on_failure ?? true,
   };
 
   const { data, error } = await supabase
