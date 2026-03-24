@@ -21,6 +21,7 @@ Shift focus from the completed documentation/tooling alignment work to the remai
 - `components/AnalyticsTab.tsx` monitor creation UI is now aligned with manual testing capabilities for request setup: method, headers JSON, body, auth modes (`none`, `bearer`, `api-key`, `basic`), expected status, and failure alert toggle.
 - The manual testing workspace can now hand off the current request configuration directly into monitor creation, switching the dashboard to the analytics tab and pre-filling the monitor form without a page reload.
 - `components/AnalyticsTab.tsx` was rebuilt in clean UTF-8 after a text-encoding regression corrupted monitor-form labels and analytics copy in the UI.
+- Vercel deploys now run through `bun` correctly; the remaining deployment stopper found in this session was a strict TypeScript mismatch in `app/dashboard/page.tsx`, where `testData` needed `undefined` instead of `null`.
 
 ## Decisions
 - Treat the root `AGENTS.md` as the active repository rule set.

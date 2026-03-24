@@ -73,7 +73,7 @@ function DashboardContent() {
           setMonitorDraft(nextMonitorDraft);
           setActiveTab("analytics");
         }}
-        testData={testData}
+        testData={testData ?? undefined}
       />
     </div>
   );

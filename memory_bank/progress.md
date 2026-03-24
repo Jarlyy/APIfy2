@@ -21,6 +21,7 @@
 - `biome.json` contains targeted rule relaxations for legacy patterns (`forEach`, non-null assertions, some a11y checks) so that the codebase can pass lint without an immediate large refactor.
 
 ## Changelog
+- 2026-03-24: Fixed the dashboard deploy blocker in `app/dashboard/page.tsx` by normalizing `testData` from `null` to `undefined`, which resolved the strict TypeScript failure during `next build` on Vercel.
 - 2026-03-24: Rebuilt `components/AnalyticsTab.tsx` in clean UTF-8 after a text-encoding regression corrupted monitoring labels, while preserving the manual-test-to-monitoring handoff and the nested-button hydration fix.
 - 2026-03-24: Added a direct `manual test -> monitoring` flow that opens analytics and pre-fills the monitor form from the current manual request data.
 - 2026-03-24: Completed monitor creation UI parity with manual testing in `AnalyticsTab` (method, auth modes, headers/body, expected status, alert toggles).
