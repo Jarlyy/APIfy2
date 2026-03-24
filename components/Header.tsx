@@ -16,7 +16,7 @@ export default function Header({
 }: HeaderProps) {
   const { user, loading } = useAuth();
   const searchParams = useSearchParams();
-  const currentTab = searchParams.get("tab") || activeTab;
+  const currentTab = activeTab || searchParams.get("tab") || "testing";
 
   const handleSignOut = async () => {
     const supabase = createClient();
