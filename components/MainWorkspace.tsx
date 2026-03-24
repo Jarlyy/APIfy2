@@ -1,5 +1,6 @@
 "use client";
 
+import type { PendingMonitorData } from "@/lib/pending-monitor-data";
 import dynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -14,7 +15,8 @@ interface MainWorkspaceProps {
   userId: string;
   initialTab?: string;
   activeTab?: string;
-  onTabChange?: (tab: string) => void;
+  monitorDraft?: PendingMonitorData | null;
+  onCreateMonitorFromTest?: (monitorData: PendingMonitorData) => void;
   testData?: {
     serviceName: string;
     url: string;
@@ -30,7 +32,8 @@ export default function MainWorkspace({
   userId,
   initialTab = "testing",
   activeTab,
-  onTabChange: _onTabChange,
+  monitorDraft,
+  onCreateMonitorFromTest,
   testData,
 }: MainWorkspaceProps) {
   const searchParams = useSearchParams();
@@ -50,7 +53,13 @@ export default function MainWorkspace({
   const renderCurrentTab = () => {
     switch (currentTab) {
       case "testing":
-        return <UnifiedApiTester userId={userId} testData={testData} />;
+        return (
+          <UnifiedApiTester
+            userId={userId}
+            onCreateMonitorFromTest={onCreateMonitorFromTest}
+            testData={testData}
+          />
+        );
 
       case "favorites":
         return <FavoritesTab userId={userId} />;
@@ -72,13 +81,19 @@ export default function MainWorkspace({
         );
 
       case "analytics":
-        return <AnalyticsTab />;
+        return <AnalyticsTab monitorDraft={monitorDraft} />;
 
       case "history":
         return <HistoryTab />;
 
       default:
-        return <UnifiedApiTester userId={userId} testData={testData} />;
+        return (
+          <UnifiedApiTester
+            userId={userId}
+            onCreateMonitorFromTest={onCreateMonitorFromTest}
+            testData={testData}
+          />
+        );
     }
   };
 

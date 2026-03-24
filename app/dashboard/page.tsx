@@ -3,6 +3,7 @@
 import Header from "@/components/Header";
 import MainWorkspace from "@/components/MainWorkspace";
 import { useAuth } from "@/hooks/useAuth";
+import type { PendingMonitorData } from "@/lib/pending-monitor-data";
 import {
   PENDING_TEST_DATA_EVENT,
   type PendingTestData,
@@ -18,6 +19,9 @@ function DashboardContent() {
   const searchParams = useSearchParams();
   const tabFromUrl = searchParams.get("tab");
   const [activeTab, setActiveTab] = useState(tabFromUrl || "testing");
+  const [monitorDraft, setMonitorDraft] = useState<PendingMonitorData | null>(
+    null,
+  );
   const [testData, setTestData] = useState<PendingTestData | null>(null);
 
   useEffect(() => {
@@ -64,7 +68,11 @@ function DashboardContent() {
       <MainWorkspace
         userId={user?.id || "guest-user"}
         activeTab={activeTab}
-        onTabChange={setActiveTab}
+        monitorDraft={monitorDraft}
+        onCreateMonitorFromTest={(nextMonitorDraft) => {
+          setMonitorDraft(nextMonitorDraft);
+          setActiveTab("analytics");
+        }}
         testData={testData}
       />
     </div>

@@ -13,6 +13,7 @@ import {
   getMonitoringRuns,
   getMonitors,
 } from "@/lib/monitoring";
+import type { PendingMonitorData } from "@/lib/pending-monitor-data";
 import { type TestHistoryItem, getTestHistory } from "@/lib/test-history";
 import {
   Activity,
@@ -51,7 +52,29 @@ const STATUS_COLORS = {
 type HttpMethod = "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
 type AuthType = "none" | "bearer" | "api-key" | "basic";
 
-export default function AnalyticsTab() {
+interface AnalyticsTabProps {
+  monitorDraft?: PendingMonitorData | null;
+}
+
+const DEFAULT_MONITOR_FORM = {
+  name: "",
+  url: "",
+  method: "GET" as HttpMethod,
+  headers: "{}",
+  body: "",
+  authType: "none" as AuthType,
+  bearerToken: "",
+  apiKey: "",
+  apiKeyHeader: "X-API-Key",
+  basicUsername: "",
+  basicPassword: "",
+  interval_minutes: 1440,
+  expected_status: 200,
+  sla_target: 99.9,
+  alert_on_failure: true,
+};
+
+export default function AnalyticsTab({ monitorDraft }: AnalyticsTabProps) {
   const [loading, setLoading] = useState(true);
   const [history, setHistory] = useState<TestHistoryItem[]>([]);
   const [monitorRuns, setMonitorRuns] = useState<MonitoringRun[]>([]);
@@ -69,23 +92,7 @@ export default function AnalyticsTab() {
 
   const [selectedService, setSelectedService] = useState("all");
   const [selectedEndpoint, setSelectedEndpoint] = useState("all");
-  const [newMonitor, setNewMonitor] = useState({
-    name: "",
-    url: "",
-    method: "GET" as HttpMethod,
-    headers: "{}",
-    body: "",
-    authType: "none" as AuthType,
-    bearerToken: "",
-    apiKey: "",
-    apiKeyHeader: "X-API-Key",
-    basicUsername: "",
-    basicPassword: "",
-    interval_minutes: 1440,
-    expected_status: 200,
-    sla_target: 99.9,
-    alert_on_failure: true,
-  });
+  const [newMonitor, setNewMonitor] = useState(DEFAULT_MONITOR_FORM);
 
   useEffect(() => {
     const load = async () => {
@@ -96,24 +103,53 @@ export default function AnalyticsTab() {
         getMonitoringRuns(500),
       ]);
 
-      if (historyResult.success && historyResult.data)
+      if (historyResult.success && historyResult.data) {
         setHistory(historyResult.data);
+      }
+
       if (monitorsResult.success && monitorsResult.data) {
         setMonitors(monitorsResult.data);
-        if (monitorsResult.data.length > 0) {
-          setSelectedMonitorId(monitorsResult.data[0].id);
-        }
+        setSelectedMonitorId(monitorsResult.data[0]?.id ?? null);
       }
-      if (runsResult.success && runsResult.data)
+
+      if (runsResult.success && runsResult.data) {
         setMonitorRuns(runsResult.data);
+      }
+
       setLoading(false);
     };
 
     load();
   }, []);
 
+  useEffect(() => {
+    if (!monitorDraft) {
+      return;
+    }
+
+    setNewMonitor((prev) => ({
+      ...prev,
+      name: monitorDraft.name || prev.name,
+      url: monitorDraft.url || "",
+      method:
+        ((monitorDraft.method || "GET").toUpperCase() as HttpMethod) || "GET",
+      headers: monitorDraft.headers || "{}",
+      body: monitorDraft.body || "",
+      authType: (monitorDraft.authType as AuthType) || "none",
+      bearerToken: monitorDraft.bearerToken || "",
+      apiKey: monitorDraft.apiKey || "",
+      apiKeyHeader: monitorDraft.apiKeyHeader || "X-API-Key",
+      basicUsername: monitorDraft.basicUsername || "",
+      basicPassword: monitorDraft.basicPassword || "",
+    }));
+    setMonitorError(null);
+    setMonitorSuccess(
+      "Данные из ручного тестирования перенесены в форму монитора.",
+    );
+  }, [monitorDraft]);
+
   const selectedMonitor = useMemo(
-    () => monitors.find((m) => m.id === selectedMonitorId) ?? null,
+    () => monitors.find((monitor) => monitor.id === selectedMonitorId) ?? null,
     [monitors, selectedMonitorId],
   );
 
@@ -127,18 +163,19 @@ export default function AnalyticsTab() {
 
   const monitoringSummary = useMemo(() => {
     const total = selectedMonitorRuns.length;
-    const success = selectedMonitorRuns.filter((r) => r.success).length;
+    const success = selectedMonitorRuns.filter((run) => run.success).length;
     const uptime = total ? Number(((success / total) * 100).toFixed(2)) : 0;
     const avgResponse = total
       ? Math.round(
-          selectedMonitorRuns
-            .map((r) => r.response_time_ms || 0)
-            .reduce((acc, n) => acc + n, 0) / total,
+          selectedMonitorRuns.reduce(
+            (sum, run) => sum + (run.response_time_ms || 0),
+            0,
+          ) / total,
         )
       : 0;
 
     return {
-      activeMonitors: monitors.filter((m) => m.active).length,
+      activeMonitors: monitors.filter((monitor) => monitor.active).length,
       runsForMonitor: total,
       uptime,
       avgResponse,
@@ -150,10 +187,19 @@ export default function AnalyticsTab() {
 
     selectedMonitorRuns.forEach((run) => {
       const day = new Date(run.executed_at).toISOString().slice(0, 10);
-      if (!grouped.has(day)) grouped.set(day, { total: 0, success: 0 });
-      const d = grouped.get(day)!;
-      d.total += 1;
-      if (run.success) d.success += 1;
+      if (!grouped.has(day)) {
+        grouped.set(day, { total: 0, success: 0 });
+      }
+
+      const current = grouped.get(day);
+      if (!current) {
+        return;
+      }
+
+      current.total += 1;
+      if (run.success) {
+        current.success += 1;
+      }
     });
 
     return [...grouped.entries()]
@@ -168,8 +214,12 @@ export default function AnalyticsTab() {
 
   const serviceOptions = useMemo(() => {
     const counter = new Map<string, number>();
+
     history.forEach((item) => {
-      if (!item.service_name) return;
+      if (!item.service_name) {
+        return;
+      }
+
       counter.set(item.service_name, (counter.get(item.service_name) || 0) + 1);
     });
 
@@ -177,45 +227,55 @@ export default function AnalyticsTab() {
   }, [history]);
 
   const endpointOptions = useMemo(() => {
-    if (selectedService === "all") return [];
+    if (selectedService === "all") {
+      return [];
+    }
 
     const counter = new Map<string, number>();
     history
       .filter((item) => item.service_name === selectedService)
       .forEach((item) => {
-        if (!item.url) return;
+        if (!item.url) {
+          return;
+        }
+
         counter.set(item.url, (counter.get(item.url) || 0) + 1);
       });
 
     return [...counter.entries()].sort((a, b) => b[1] - a[1]);
   }, [history, selectedService]);
 
-  const filteredHistory = useMemo(() => {
-    return history.filter((item) => {
-      const serviceMatch =
-        selectedService === "all" || item.service_name === selectedService;
-      const endpointMatch =
-        selectedEndpoint === "all" || item.url === selectedEndpoint;
-      return serviceMatch && endpointMatch;
-    });
-  }, [history, selectedService, selectedEndpoint]);
+  const filteredHistory = useMemo(
+    () =>
+      history.filter((item) => {
+        const serviceMatch =
+          selectedService === "all" || item.service_name === selectedService;
+        const endpointMatch =
+          selectedEndpoint === "all" || item.url === selectedEndpoint;
+
+        return serviceMatch && endpointMatch;
+      }),
+    [history, selectedEndpoint, selectedService],
+  );
 
   const stats = useMemo(() => {
     const total = filteredHistory.length;
     const success = filteredHistory.filter(
-      (t) => t.test_status === "success",
+      (item) => item.test_status === "success",
     ).length;
     const error = filteredHistory.filter(
-      (t) => t.test_status === "error",
+      (item) => item.test_status === "error",
     ).length;
     const pending = filteredHistory.filter(
-      (t) => t.test_status === "pending",
+      (item) => item.test_status === "pending",
     ).length;
     const values = filteredHistory
-      .map((h) => h.response_time)
-      .filter((v): v is number => typeof v === "number");
+      .map((item) => item.response_time)
+      .filter((value): value is number => typeof value === "number");
     const avgResponse = values.length
-      ? Math.round(values.reduce((acc, v) => acc + v, 0) / values.length)
+      ? Math.round(
+          values.reduce((sum, value) => sum + value, 0) / values.length,
+        )
       : 0;
     const successRate = total ? Math.round((success / total) * 100) : 0;
 
@@ -225,26 +285,36 @@ export default function AnalyticsTab() {
   const statusPieData = useMemo(
     () =>
       [
-        { name: "Success", value: stats.success, color: STATUS_COLORS.success },
+        {
+          name: "Success",
+          value: stats.success,
+          color: STATUS_COLORS.success,
+        },
         { name: "Error", value: stats.error, color: STATUS_COLORS.error },
-        { name: "Pending", value: stats.pending, color: STATUS_COLORS.pending },
+        {
+          name: "Pending",
+          value: stats.pending,
+          color: STATUS_COLORS.pending,
+        },
       ].filter((item) => item.value > 0),
     [stats],
   );
 
-  const responseTrend = useMemo(() => {
-    return [...filteredHistory]
-      .reverse()
-      .slice(0, 30)
-      .map((item, index) => ({
-        idx: index + 1,
-        response: item.response_time || 0,
-      }));
-  }, [filteredHistory]);
+  const responseTrend = useMemo(
+    () =>
+      [...filteredHistory]
+        .reverse()
+        .slice(0, 30)
+        .map((item, index) => ({
+          idx: index + 1,
+          response: item.response_time || 0,
+        })),
+    [filteredHistory],
+  );
 
   const performanceRows = useMemo(() => {
     const keyMode = selectedService === "all" ? "service" : "endpoint";
-    const map = new Map<
+    const rows = new Map<
       string,
       {
         total: number;
@@ -257,25 +327,34 @@ export default function AnalyticsTab() {
     filteredHistory.forEach((item) => {
       const key =
         keyMode === "service"
-          ? item.service_name || "Unknown"
-          : item.url || "Unknown";
-      if (!map.has(key))
-        map.set(key, {
+          ? item.service_name || "Unknown service"
+          : item.url || "Unknown endpoint";
+
+      if (!rows.has(key)) {
+        rows.set(key, {
           total: 0,
           success: 0,
           responseTotal: 0,
           responseCount: 0,
         });
-      const row = map.get(key)!;
-      row.total += 1;
-      if (item.test_status === "success") row.success += 1;
+      }
+
+      const current = rows.get(key);
+      if (!current) {
+        return;
+      }
+
+      current.total += 1;
+      if (item.test_status === "success") {
+        current.success += 1;
+      }
       if (typeof item.response_time === "number") {
-        row.responseTotal += item.response_time;
-        row.responseCount += 1;
+        current.responseTotal += item.response_time;
+        current.responseCount += 1;
       }
     });
 
-    return [...map.entries()]
+    return [...rows.entries()]
       .map(([name, row]) => ({
         name,
         total: row.total,
@@ -297,7 +376,7 @@ export default function AnalyticsTab() {
 
   const buildMonitorHeaders = () => {
     const parsedHeaders = newMonitor.headers.trim()
-      ? (JSON.parse(newMonitor.headers) as Record<string, string>)
+      ? (JSON.parse(newMonitor.headers) as Record<string, unknown>)
       : {};
 
     const normalizedHeaders = Object.fromEntries(
@@ -328,7 +407,9 @@ export default function AnalyticsTab() {
   };
 
   const handleCreateMonitor = async () => {
-    if (!newMonitor.name.trim() || !newMonitor.url.trim()) return;
+    if (!newMonitor.name.trim() || !newMonitor.url.trim()) {
+      return;
+    }
 
     setCreatingMonitor(true);
     setMonitorError(null);
@@ -340,7 +421,7 @@ export default function AnalyticsTab() {
       monitorHeaders = buildMonitorHeaders();
     } catch (error) {
       setMonitorError(
-        `Некорректный JSON в заголовках: ${error instanceof Error ? error.message : "неизвестная ошибка"}`,
+        `Некорректный JSON заголовков: ${error instanceof Error ? error.message : "неизвестная ошибка"}`,
       );
       setCreatingMonitor(false);
       return;
@@ -362,25 +443,9 @@ export default function AnalyticsTab() {
     });
 
     if (result.success && result.data) {
-      setMonitors((prev) => [result.data!, ...prev]);
+      setMonitors((prev) => [result.data, ...prev]);
       setSelectedMonitorId(result.data.id);
-      setNewMonitor({
-        name: "",
-        url: "",
-        method: "GET",
-        headers: "{}",
-        body: "",
-        authType: "none",
-        bearerToken: "",
-        apiKey: "",
-        apiKeyHeader: "X-API-Key",
-        basicUsername: "",
-        basicPassword: "",
-        interval_minutes: 1440,
-        expected_status: 200,
-        sla_target: 99.9,
-        alert_on_failure: true,
-      });
+      setNewMonitor(DEFAULT_MONITOR_FORM);
       setMonitorSuccess("Монитор успешно создан.");
     } else {
       setMonitorError(result.error || "Не удалось создать монитор.");
@@ -402,17 +467,17 @@ export default function AnalyticsTab() {
       return;
     }
 
-    setMonitors((prev) => prev.filter((m) => m.id !== monitorId));
+    const nextMonitors = monitors.filter((monitor) => monitor.id !== monitorId);
+    setMonitors(nextMonitors);
     setMonitorRuns((prev) =>
       prev.filter((run) => run.monitor_id !== monitorId),
     );
 
     if (selectedMonitorId === monitorId) {
-      const next = monitors.find((m) => m.id !== monitorId);
-      setSelectedMonitorId(next?.id || null);
+      setSelectedMonitorId(nextMonitors[0]?.id ?? null);
     }
 
-    setMonitorSuccess("Монитор удален.");
+    setMonitorSuccess("Монитор удалён.");
     setDeletingMonitorId(null);
   };
 
@@ -429,72 +494,290 @@ export default function AnalyticsTab() {
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Мониторинг по расписанию</CardTitle>
+          <CardTitle>Мониторинг</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid gap-3 md:grid-cols-4">
-            <div className="space-y-1">
-              <label
-                className="text-xs font-medium text-muted-foreground"
-                htmlFor="monitor-name"
-              >
-                Название
-              </label>
-              <Input
-                id="monitor-name"
-                placeholder="Название монитора"
-                value={newMonitor.name}
-                onChange={(e) =>
-                  setNewMonitor((prev) => ({ ...prev, name: e.target.value }))
-                }
-              />
+          <div className="grid gap-4">
+            <div className="grid gap-3 md:grid-cols-3">
+              <Field label="Название" htmlFor="monitor-name">
+                <Input
+                  id="monitor-name"
+                  placeholder="Создать монитор API"
+                  value={newMonitor.name}
+                  onChange={(event) =>
+                    setNewMonitor((prev) => ({
+                      ...prev,
+                      name: event.target.value,
+                    }))
+                  }
+                />
+              </Field>
+
+              <Field label="HTTP-метод" htmlFor="monitor-method">
+                <select
+                  id="monitor-method"
+                  className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+                  value={newMonitor.method}
+                  onChange={(event) =>
+                    setNewMonitor((prev) => ({
+                      ...prev,
+                      method: event.target.value as HttpMethod,
+                      body:
+                        event.target.value === "GET" && prev.method !== "GET"
+                          ? ""
+                          : prev.body,
+                    }))
+                  }
+                >
+                  <option value="GET">GET</option>
+                  <option value="POST">POST</option>
+                  <option value="PUT">PUT</option>
+                  <option value="PATCH">PATCH</option>
+                  <option value="DELETE">DELETE</option>
+                </select>
+              </Field>
+
+              <Field label="Ожидаемый статус" htmlFor="monitor-expected-status">
+                <Input
+                  id="monitor-expected-status"
+                  type="number"
+                  min={100}
+                  max={599}
+                  value={newMonitor.expected_status}
+                  onChange={(event) =>
+                    setNewMonitor((prev) => ({
+                      ...prev,
+                      expected_status: Number(event.target.value || 200),
+                    }))
+                  }
+                />
+              </Field>
             </div>
-            <div className="space-y-1">
-              <label
-                className="text-xs font-medium text-muted-foreground"
-                htmlFor="monitor-endpoint"
-              >
-                Эндпоинт
-              </label>
+
+            <Field label="URL эндпоинта" htmlFor="monitor-url">
               <Input
-                id="monitor-endpoint"
+                id="monitor-url"
                 placeholder="https://api.example.com/health"
                 value={newMonitor.url}
-                onChange={(e) =>
-                  setNewMonitor((prev) => ({ ...prev, url: e.target.value }))
-                }
-              />
-            </div>
-            <div className="space-y-1">
-              <label
-                className="text-xs font-medium text-muted-foreground"
-                htmlFor="monitor-interval"
-              >
-                Интервал проверок (в минутах)
-              </label>
-              <Input
-                id="monitor-interval"
-                type="number"
-                min={1440}
-                step={60}
-                value={newMonitor.interval_minutes}
-                onChange={(e) =>
+                onChange={(event) =>
                   setNewMonitor((prev) => ({
                     ...prev,
-                    interval_minutes: Number(e.target.value || 1440),
+                    url: event.target.value,
                   }))
                 }
-                placeholder="Например, 1440 = 1 раз в день"
               />
+            </Field>
+
+            <div className="grid gap-3 md:grid-cols-2">
+              <Field label="JSON заголовков" htmlFor="monitor-headers">
+                <Textarea
+                  id="monitor-headers"
+                  rows={6}
+                  placeholder='{"Accept":"application/json"}'
+                  value={newMonitor.headers}
+                  onChange={(event) =>
+                    setNewMonitor((prev) => ({
+                      ...prev,
+                      headers: event.target.value,
+                    }))
+                  }
+                />
+              </Field>
+
+              <Field label="Тело запроса" htmlFor="monitor-body">
+                <Textarea
+                  id="monitor-body"
+                  rows={6}
+                  placeholder='{"ping":"pong"}'
+                  value={newMonitor.body}
+                  disabled={newMonitor.method === "GET"}
+                  onChange={(event) =>
+                    setNewMonitor((prev) => ({
+                      ...prev,
+                      body: event.target.value,
+                    }))
+                  }
+                />
+                {newMonitor.method === "GET" && (
+                  <p className="text-xs text-muted-foreground">
+                    Для GET-запросов тело не используется.
+                  </p>
+                )}
+              </Field>
             </div>
-            <Button
-              className="self-end"
-              onClick={handleCreateMonitor}
-              disabled={creatingMonitor || !newMonitor.name || !newMonitor.url}
-            >
-              <PlusCircle className="mr-2 h-4 w-4" />{" "}
-              {creatingMonitor ? "Создание..." : "Добавить монитор"}
-            </Button>
+
+            <div className="grid gap-3 md:grid-cols-3">
+              <Field label="Авторизация" htmlFor="monitor-auth-type">
+                <select
+                  id="monitor-auth-type"
+                  className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+                  value={newMonitor.authType}
+                  onChange={(event) =>
+                    setNewMonitor((prev) => ({
+                      ...prev,
+                      authType: event.target.value as AuthType,
+                    }))
+                  }
+                >
+                  <option value="none">Без авторизации</option>
+                  <option value="bearer">Bearer token</option>
+                  <option value="api-key">API key</option>
+                  <option value="basic">Basic auth</option>
+                </select>
+              </Field>
+
+              {newMonitor.authType === "bearer" && (
+                <Field
+                  label="Bearer token"
+                  htmlFor="monitor-bearer-token"
+                  className="md:col-span-2"
+                >
+                  <Input
+                    id="monitor-bearer-token"
+                    placeholder="Введите токен"
+                    value={newMonitor.bearerToken}
+                    onChange={(event) =>
+                      setNewMonitor((prev) => ({
+                        ...prev,
+                        bearerToken: event.target.value,
+                      }))
+                    }
+                  />
+                </Field>
+              )}
+
+              {newMonitor.authType === "api-key" && (
+                <>
+                  <Field
+                    label="Заголовок API key"
+                    htmlFor="monitor-api-key-header"
+                  >
+                    <Input
+                      id="monitor-api-key-header"
+                      placeholder="X-API-Key"
+                      value={newMonitor.apiKeyHeader}
+                      onChange={(event) =>
+                        setNewMonitor((prev) => ({
+                          ...prev,
+                          apiKeyHeader: event.target.value,
+                        }))
+                      }
+                    />
+                  </Field>
+
+                  <Field label="API key" htmlFor="monitor-api-key">
+                    <Input
+                      id="monitor-api-key"
+                      placeholder="Введите API key"
+                      value={newMonitor.apiKey}
+                      onChange={(event) =>
+                        setNewMonitor((prev) => ({
+                          ...prev,
+                          apiKey: event.target.value,
+                        }))
+                      }
+                    />
+                  </Field>
+                </>
+              )}
+
+              {newMonitor.authType === "basic" && (
+                <>
+                  <Field label="Логин" htmlFor="monitor-basic-username">
+                    <Input
+                      id="monitor-basic-username"
+                      placeholder="Логин"
+                      value={newMonitor.basicUsername}
+                      onChange={(event) =>
+                        setNewMonitor((prev) => ({
+                          ...prev,
+                          basicUsername: event.target.value,
+                        }))
+                      }
+                    />
+                  </Field>
+
+                  <Field label="Пароль" htmlFor="monitor-basic-password">
+                    <Input
+                      id="monitor-basic-password"
+                      type="password"
+                      placeholder="Пароль"
+                      value={newMonitor.basicPassword}
+                      onChange={(event) =>
+                        setNewMonitor((prev) => ({
+                          ...prev,
+                          basicPassword: event.target.value,
+                        }))
+                      }
+                    />
+                  </Field>
+                </>
+              )}
+            </div>
+
+            <div className="grid gap-3 md:grid-cols-3">
+              <Field label="Интервал, минут" htmlFor="monitor-interval">
+                <Input
+                  id="monitor-interval"
+                  type="number"
+                  min={1440}
+                  step={60}
+                  placeholder="1440"
+                  value={newMonitor.interval_minutes}
+                  onChange={(event) =>
+                    setNewMonitor((prev) => ({
+                      ...prev,
+                      interval_minutes: Number(event.target.value || 1440),
+                    }))
+                  }
+                />
+              </Field>
+
+              <Field label="Цель SLA, %" htmlFor="monitor-sla-target">
+                <Input
+                  id="monitor-sla-target"
+                  type="number"
+                  min={0}
+                  max={100}
+                  step={0.1}
+                  value={newMonitor.sla_target}
+                  onChange={(event) =>
+                    setNewMonitor((prev) => ({
+                      ...prev,
+                      sla_target: Number(event.target.value || 99.9),
+                    }))
+                  }
+                />
+              </Field>
+
+              <label className="flex items-center gap-2 rounded-md border px-3 py-2 text-sm md:mt-6">
+                <input
+                  type="checkbox"
+                  checked={newMonitor.alert_on_failure}
+                  onChange={(event) =>
+                    setNewMonitor((prev) => ({
+                      ...prev,
+                      alert_on_failure: event.target.checked,
+                    }))
+                  }
+                />
+                Уведомлять о сбое
+              </label>
+            </div>
+
+            <div className="flex justify-end">
+              <Button
+                onClick={handleCreateMonitor}
+                disabled={
+                  creatingMonitor ||
+                  !newMonitor.name.trim() ||
+                  !newMonitor.url.trim()
+                }
+              >
+                <PlusCircle className="mr-2 h-4 w-4" />
+                {creatingMonitor ? "Создание..." : "Добавить монитор"}
+              </Button>
+            </div>
           </div>
 
           {monitorError && (
@@ -518,44 +801,41 @@ export default function AnalyticsTab() {
             ) : (
               <div className="space-y-2">
                 {monitors.map((monitor) => (
-                  <button
+                  <div
                     key={monitor.id}
-                    onClick={() => setSelectedMonitorId(monitor.id)}
-                    className={`w-full rounded-md border p-3 text-left transition-colors ${
+                    className={`flex items-start gap-2 rounded-md border p-3 transition-colors ${
                       selectedMonitorId === monitor.id
                         ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20"
                         : "border-input hover:bg-muted/60"
                     }`}
                   >
-                    <div className="flex items-center justify-between gap-2">
-                      <div>
-                        <p className="font-medium text-sm">{monitor.name}</p>
-                        <p className="text-xs text-muted-foreground truncate">
-                          {monitor.url}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Badge
-                          variant={monitor.active ? "default" : "secondary"}
-                        >
-                          {monitor.active ? "Активен" : "Пауза"}
-                        </Badge>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-7 w-7 text-red-500 hover:text-red-600"
-                          disabled={deletingMonitorId === monitor.id}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDeleteMonitor(monitor.id);
-                          }}
-                          title="Удалить монитор"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedMonitorId(monitor.id)}
+                      className="flex-1 text-left"
+                    >
+                      <p className="text-sm font-medium">{monitor.name}</p>
+                      <p className="truncate text-xs text-muted-foreground">
+                        {monitor.url}
+                      </p>
+                    </button>
+
+                    <div className="flex items-center gap-2">
+                      <Badge variant={monitor.active ? "default" : "secondary"}>
+                        {monitor.active ? "Активен" : "Пауза"}
+                      </Badge>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 text-red-500 hover:text-red-600"
+                        disabled={deletingMonitorId === monitor.id}
+                        onClick={() => handleDeleteMonitor(monitor.id)}
+                        title="Удалить монитор"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     </div>
-                  </button>
+                  </div>
                 ))}
               </div>
             )}
@@ -580,7 +860,7 @@ export default function AnalyticsTab() {
                   value={`${monitoringSummary.uptime}%`}
                 />
                 <MetricCard
-                  title="Ср. отклик"
+                  title="Средний отклик"
                   icon={<Clock className="h-4 w-4 text-blue-600" />}
                   value={`${monitoringSummary.avgResponse} мс`}
                 />
@@ -592,6 +872,15 @@ export default function AnalyticsTab() {
                   {selectedMonitor.name}
                 </p>
                 <p className="text-muted-foreground">{selectedMonitor.url}</p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  <Badge variant="outline">{selectedMonitor.method}</Badge>
+                  <Badge variant="outline">
+                    Статус: {selectedMonitor.expected_status}
+                  </Badge>
+                  <Badge variant="outline">
+                    Каждые {selectedMonitor.interval_minutes} мин
+                  </Badge>
+                </div>
               </div>
 
               <div className="h-64">
@@ -627,8 +916,8 @@ export default function AnalyticsTab() {
             <select
               className="w-full rounded-md border bg-background px-3 py-2 text-sm"
               value={selectedService}
-              onChange={(e) => {
-                setSelectedService(e.target.value);
+              onChange={(event) => {
+                setSelectedService(event.target.value);
                 setSelectedEndpoint("all");
               }}
             >
@@ -648,7 +937,7 @@ export default function AnalyticsTab() {
             <select
               className="w-full rounded-md border bg-background px-3 py-2 text-sm"
               value={selectedEndpoint}
-              onChange={(e) => setSelectedEndpoint(e.target.value)}
+              onChange={(event) => setSelectedEndpoint(event.target.value)}
               disabled={selectedService === "all"}
             >
               <option value="all">Все эндпоинты</option>
@@ -667,7 +956,8 @@ export default function AnalyticsTab() {
               className="w-full"
               disabled={selectedService === "all" && selectedEndpoint === "all"}
             >
-              <FilterX className="mr-2 h-4 w-4" /> Сбросить фильтры
+              <FilterX className="mr-2 h-4 w-4" />
+              Сбросить фильтры
             </Button>
           </div>
         </CardContent>
@@ -732,7 +1022,7 @@ export default function AnalyticsTab() {
           <CardContent className="h-72">
             {statusPieData.length === 0 ? (
               <p className="text-sm text-zinc-500 dark:text-zinc-400">
-                Нет данных для отображения.
+                Пока нет данных для этого графика.
               </p>
             ) : (
               <ResponsiveContainer width="100%" height="100%">
@@ -821,11 +1111,39 @@ export default function AnalyticsTab() {
   );
 }
 
+function Field({
+  children,
+  className,
+  htmlFor,
+  label,
+}: {
+  children: ReactNode;
+  className?: string;
+  htmlFor: string;
+  label: string;
+}) {
+  return (
+    <div className={`space-y-1 ${className ?? ""}`.trim()}>
+      <label
+        className="text-xs font-medium text-muted-foreground"
+        htmlFor={htmlFor}
+      >
+        {label}
+      </label>
+      {children}
+    </div>
+  );
+}
+
 function MetricCard({
   title,
   value,
   icon,
-}: { title: string; value: string | number; icon: ReactNode }) {
+}: {
+  title: string;
+  value: string | number;
+  icon: ReactNode;
+}) {
   return (
     <Card>
       <CardHeader className="pb-2">

@@ -20,8 +20,10 @@ import {
   setCorsProxyEnabled,
 } from "@/lib/cors-proxy";
 import { addToFavorites, isFavorite } from "@/lib/favorites";
+import type { PendingMonitorData } from "@/lib/pending-monitor-data";
 import { type TestHistoryItem, saveTestToHistory } from "@/lib/test-history";
 import {
+  Activity,
   Brain,
   CheckCircle,
   Clock,
@@ -69,6 +71,7 @@ interface TestResult {
 
 interface UnifiedApiTesterProps {
   userId: string;
+  onCreateMonitorFromTest?: (monitorData: PendingMonitorData) => void;
   testData?: {
     serviceName: string;
     url: string;
@@ -80,7 +83,11 @@ interface UnifiedApiTesterProps {
   };
 }
 
-export function UnifiedApiTester({ userId, testData }: UnifiedApiTesterProps) {
+export function UnifiedApiTester({
+  userId,
+  onCreateMonitorFromTest,
+  testData,
+}: UnifiedApiTesterProps) {
   // Функция для получения цвета метода HTTP
   const getMethodColor = (method: string) => {
     switch (method.toUpperCase()) {
@@ -198,6 +205,31 @@ export function UnifiedApiTester({ userId, testData }: UnifiedApiTesterProps) {
   const [aiAnalysisEnabled, setAiAnalysisEnabledState] = useState(
     isAiAnalysisEnabled(),
   );
+
+  const queueMonitorFromManualTest = () => {
+    if (!manualTest.url.trim() || !onCreateMonitorFromTest) {
+      return;
+    }
+
+    let fallbackName = manualTest.url.trim();
+    try {
+      fallbackName = new URL(manualTest.url.trim()).hostname;
+    } catch {}
+
+    onCreateMonitorFromTest({
+      name: manualTest.serviceName.trim() || fallbackName,
+      url: manualTest.url.trim(),
+      method: manualTest.method,
+      headers: manualTest.headers || "{}",
+      body: manualTest.body,
+      authType: manualTest.authType,
+      bearerToken: manualTest.bearerToken,
+      apiKey: manualTest.apiKey,
+      apiKeyHeader: manualTest.apiKeyHeader,
+      basicUsername: manualTest.basicUsername,
+      basicPassword: manualTest.basicPassword,
+    });
+  };
 
   // AI Generation Functions
   const generateExecutableTests = async () => {
@@ -1528,6 +1560,15 @@ export function UnifiedApiTester({ userId, testData }: UnifiedApiTesterProps) {
                         Выполнить тест
                       </>
                     )}
+                  </Button>
+
+                  <Button
+                    onClick={queueMonitorFromManualTest}
+                    disabled={!manualTest.url.trim()}
+                    variant="outline"
+                    className="flex-shrink-0"
+                  >
+                    <Activity className="mr-2 h-4 w-4" />В мониторинг
                   </Button>
 
                   <Button

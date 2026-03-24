@@ -18,7 +18,9 @@ Shift focus from the completed documentation/tooling alignment work to the remai
 - The working analytics content has now been restored by bringing back `components/AnalyticsTab.tsx` and reconnecting it in `components/MainWorkspace.tsx`.
 - Re-running tests from `History` and `Favorites` no longer requires a full page reload; the dashboard now consumes pending test data through a shared client-side event flow.
 - The monitoring data layer now accepts richer request configuration during monitor creation: HTTP method, custom headers, optional body, expected status, and failure alert preferences.
-- `components/AnalyticsTab.tsx` has in-progress groundwork for monitor-creation parity with manual testing, including auth-related state (`bearer`, `api-key`, `basic`) and header assembly logic.
+- `components/AnalyticsTab.tsx` monitor creation UI is now aligned with manual testing capabilities for request setup: method, headers JSON, body, auth modes (`none`, `bearer`, `api-key`, `basic`), expected status, and failure alert toggle.
+- The manual testing workspace can now hand off the current request configuration directly into monitor creation, switching the dashboard to the analytics tab and pre-filling the monitor form without a page reload.
+- `components/AnalyticsTab.tsx` was rebuilt in clean UTF-8 after a text-encoding regression corrupted monitor-form labels and analytics copy in the UI.
 
 ## Decisions
 - Treat the root `AGENTS.md` as the active repository rule set.
@@ -29,4 +31,4 @@ Shift focus from the completed documentation/tooling alignment work to the remai
 ## Next Actions
 - Keep project progress at 90% while `DEL-006` remains the only unfinished deliverable.
 - Continue dashboard productivity polish work beyond the restored analytics tab, focusing on any remaining UX rough edges in the workspace.
-- Finish the monitor creation UI in the analytics tab so scheduled monitors expose the same request configuration controls as manual testing.
+- Continue DEL-006 polish with post-create monitor UX improvements such as validation hints and richer monitor details visualization.
