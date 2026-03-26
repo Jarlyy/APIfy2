@@ -1,9 +1,10 @@
 # Active Context
 
 ## Current Task
-Track newly expanded planning scope in Memory Bank: continue `DEL-006`, keep `DEL-008` pending, and add `DEL-009` for migrating monitoring to an alternative cron service.
+Continue implementation under the approved plan: deliver first concrete `DEL-008` step (theme toggle + persisted preference), while keeping `DEL-006` and `DEL-009` in the queue.
 
 ## Current Findings
+- `components/Header.tsx` now includes a user-facing theme toggle that switches light/dark mode and persists preference in `localStorage` while applying the `dark` class on `<html>`.
 - User requested adding a dedicated dark-theme item to the development plan; this is now tracked as a separate deliverable candidate.
 - User additionally requested adding monitoring migration to another cron service into the development plan.
 - `package.json` now declares `bun@1.3.10` as the canonical `packageManager`, and the direct `pnpm` dependency has been removed.
@@ -32,7 +33,7 @@ Track newly expanded planning scope in Memory Bank: continue `DEL-006`, keep `DE
 - Prefer workflow polish that removes disruptive full-page reloads from the dashboard experience when equivalent client-side state handoff is feasible.
 
 ## Next Actions
-- Keep project progress at 90% with three open deliverables: `DEL-006` (in progress), `DEL-008` (pending), and `DEL-009` (pending).
+- Keep project progress at 90% with three open deliverables: `DEL-006` (in progress), `DEL-008` (in progress), and `DEL-009` (pending).
 - Continue dashboard productivity polish work under `DEL-006`, focusing on remaining workspace UX rough edges.
-- Plan and implement a dedicated dark-theme pass under `DEL-008` across dashboard/workspace surfaces with parity checks for light theme.
+- Continue dedicated dark-theme pass under `DEL-008` after initial toggle rollout, focusing on full dashboard/workspace parity and contrast validation.
 - Plan monitoring migration under `DEL-009`: replace current cron provider, update schedules/env, and validate `/api/monitor/run` trigger compatibility.

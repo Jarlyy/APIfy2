@@ -4,6 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
 
 interface HeaderProps {
   activeTab?: string;
@@ -17,6 +18,31 @@ export default function Header({
   const { user, loading } = useAuth();
   const searchParams = useSearchParams();
   const currentTab = activeTab || searchParams.get("tab") || "testing";
+
+  const [theme, setTheme] = useState<"light" | "dark">("light");
+
+  useEffect(() => {
+    const savedTheme = localStorage.getItem("theme");
+    const prefersDark = window.matchMedia(
+      "(prefers-color-scheme: dark)",
+    ).matches;
+    const nextTheme =
+      savedTheme === "dark" || savedTheme === "light"
+        ? savedTheme
+        : prefersDark
+          ? "dark"
+          : "light";
+
+    setTheme(nextTheme);
+    document.documentElement.classList.toggle("dark", nextTheme === "dark");
+  }, []);
+
+  const toggleTheme = () => {
+    const nextTheme = theme === "dark" ? "light" : "dark";
+    setTheme(nextTheme);
+    localStorage.setItem("theme", nextTheme);
+    document.documentElement.classList.toggle("dark", nextTheme === "dark");
+  };
 
   const handleSignOut = async () => {
     const supabase = createClient();
@@ -104,6 +130,14 @@ export default function Header({
           </div>
 
           <div className="flex items-center gap-4 md:justify-end">
+            <button
+              type="button"
+              onClick={toggleTheme}
+              className="rounded-md border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-100 dark:border-zinc-600 dark:text-zinc-200 dark:hover:bg-zinc-700"
+              aria-label="Переключить тему"
+            >
+              {theme === "dark" ? "☀️ Светлая" : "🌙 Тёмная"}
+            </button>
             {loading ? (
               <div className="text-sm text-zinc-500 dark:text-zinc-400">
                 Загрузка...
