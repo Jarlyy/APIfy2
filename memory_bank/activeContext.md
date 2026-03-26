@@ -1,9 +1,16 @@
 # Active Context
 
 ## Current Task
-Shift focus from the completed documentation/tooling alignment work to the remaining dashboard-polish scope under `DEL-006`.
+Execute legal/security hardening for scheduled monitoring (points 1-4): authorization attestation in UI, public legal docs, URL safety constraints, and secure cron runner controls.
 
 ## Current Findings
+- `components/Header.tsx` now includes a user-facing theme toggle that switches light/dark mode and persists preference in `localStorage` while applying the `dark` class on `<html>`.
+- Monitoring creation now enforces user legal attestation in UI before monitor can be created.
+- Monitoring URL validation now blocks local/private targets and sensitive query patterns (`token`, `key`, `secret`, etc.) to reduce abuse risk.
+- `/api/monitor/run` now treats missing `MONITOR_CRON_SECRET` as a configuration error, adds rate limiting, and writes basic operational security logs.
+- Public draft legal docs were added under `docs/legal/` (ToS, Privacy, AUP) and linked from architecture/monitoring docs.
+- User requested adding a dedicated dark-theme item to the development plan; this is now tracked as a separate deliverable candidate.
+- User additionally requested adding monitoring migration to another cron service into the development plan.
 - `package.json` now declares `bun@1.3.10` as the canonical `packageManager`, and the direct `pnpm` dependency has been removed.
 - The repository now contains `bun.lock`; the obsolete `pnpm-lock.yaml` and `.npmrc` have been removed.
 - Root onboarding docs and supporting setup docs now use `bun install` and `bun dev`.
@@ -30,6 +37,8 @@ Shift focus from the completed documentation/tooling alignment work to the remai
 - Prefer workflow polish that removes disruptive full-page reloads from the dashboard experience when equivalent client-side state handoff is feasible.
 
 ## Next Actions
-- Keep project progress at 90% while `DEL-006` remains the only unfinished deliverable.
-- Continue dashboard productivity polish work beyond the restored analytics tab, focusing on any remaining UX rough edges in the workspace.
-- Continue DEL-006 polish with post-create monitor UX improvements such as validation hints and richer monitor details visualization.
+- Keep project progress at 90% with four open deliverables: `DEL-006` (in progress), `DEL-008` (in progress), `DEL-009` (pending), and `DEL-010` (in progress).
+- Continue dashboard productivity polish work under `DEL-006`, focusing on remaining workspace UX rough edges.
+- Continue dedicated dark-theme pass under `DEL-008` after initial toggle rollout, focusing on full dashboard/workspace parity and contrast validation.
+- Plan monitoring migration under `DEL-009`: replace current cron provider, update schedules/env, and validate `/api/monitor/run` trigger compatibility.
+- Continue DEL-010 by adding stronger audit retention guidance and legal text review with counsel before public release.

@@ -4,7 +4,7 @@
 - Memory Bank structure is synchronized with the root `AGENTS.md` requirements.
 - The mandatory root files exist and now reflect the latest upstream monitoring work plus the current local working tree.
 - `memory_bank/ui_extension/` has been added to document public pages and key UI components.
-- Canonical project progress is now tracked through `projectbrief.md` deliverables: 90% complete.
+- Canonical project progress is now tracked through `projectbrief.md` deliverables: 90% complete (DEL-006 in progress, DEL-008 in progress, DEL-009 pending, DEL-010 in progress).
 - The `pnpm` to `bun` migration commit has been reviewed against the current tree and Memory Bank has been synchronized to that state.
 - `docs/README.md` has been created as the canonical high-level architecture source required by `AGENTS.md`.
 - The repository now uses Biome as the active lint tool, and `bun run lint` completes successfully.
@@ -21,6 +21,10 @@
 - `biome.json` contains targeted rule relaxations for legacy patterns (`forEach`, non-null assertions, some a11y checks) so that the codebase can pass lint without an immediate large refactor.
 
 ## Changelog
+- 2026-03-26: Implemented monitoring legal/security hardening points 1-4: user attestation checkbox in monitor UI, URL safety validation, cron endpoint secret enforcement + rate limiting + security logs, and draft legal docs (`docs/legal/*`).
+- 2026-03-26: Started `DEL-008` implementation by adding a persisted light/dark theme toggle in `components/Header.tsx` that toggles the `dark` class on `<html>`.
+- 2026-03-26: Added planning scope for monitoring migration to an alternative cron service in `docs/development-plan.md` and added canonical deliverable `DEL-009` in `projectbrief.md`.
+- 2026-03-26: Synchronized Memory Bank control commit to current HEAD and added dark-theme scope to planning (`docs/development-plan.md`) plus canonical deliverables (`DEL-008`).
 - 2026-03-24: Fixed the dashboard deploy blocker in `app/dashboard/page.tsx` by normalizing `testData` from `null` to `undefined`, which resolved the strict TypeScript failure during `next build` on Vercel.
 - 2026-03-24: Rebuilt `components/AnalyticsTab.tsx` in clean UTF-8 after a text-encoding regression corrupted monitoring labels, while preserving the manual-test-to-monitoring handoff and the nested-button hydration fix.
 - 2026-03-24: Added a direct `manual test -> monitoring` flow that opens analytics and pre-fills the monitor form from the current manual request data.
@@ -44,5 +48,5 @@
 - 2026-03-12: Supabase schema was made idempotent for reruns and Memory Bank was previously re-synced.
 
 ## Change Control
-- last_checked_commit: `badb7ff`
-- checked_on: `2026-03-24`
+- last_checked_commit: `ff188a2`
+- checked_on: `2026-03-26`

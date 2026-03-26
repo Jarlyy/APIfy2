@@ -1,5 +1,62 @@
 import { createClient } from "@/lib/supabase/client";
 
+const SENSITIVE_QUERY_KEYS = ["token", "key", "secret", "password", "auth"];
+
+function isPrivateHostname(hostname: string) {
+  const lowerHost = hostname.toLowerCase();
+  if (
+    lowerHost === "localhost" ||
+    lowerHost.endsWith(".localhost") ||
+    lowerHost.endsWith(".local")
+  ) {
+    return true;
+  }
+
+  if (/^\d{1,3}(\.\d{1,3}){3}$/.test(lowerHost)) {
+    if (
+      lowerHost.startsWith("10.") ||
+      lowerHost.startsWith("127.") ||
+      lowerHost.startsWith("192.168.") ||
+      /^172\.(1[6-9]|2\d|3[0-1])\./.test(lowerHost) ||
+      lowerHost === "0.0.0.0"
+    ) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+function validateMonitorUrl(rawUrl: string) {
+  let parsed: URL;
+  try {
+    parsed = new URL(rawUrl);
+  } catch {
+    return "Некорректный URL мониторинга.";
+  }
+
+  if (!["http:", "https:"].includes(parsed.protocol)) {
+    return "Мониторинг поддерживает только HTTP/HTTPS URL.";
+  }
+
+  if (parsed.username || parsed.password) {
+    return "Не передавайте логин/пароль в URL. Используйте поле авторизации.";
+  }
+
+  if (isPrivateHostname(parsed.hostname)) {
+    return "Мониторинг приватных/локальных адресов запрещён политикой безопасности.";
+  }
+
+  for (const [key] of parsed.searchParams.entries()) {
+    const normalized = key.toLowerCase();
+    if (SENSITIVE_QUERY_KEYS.some((token) => normalized.includes(token))) {
+      return "Не передавайте секреты в query-параметрах URL. Используйте защищённые заголовки.";
+    }
+  }
+
+  return null;
+}
+
 export interface MonitorConfig {
   id: string;
   user_id: string;
@@ -63,6 +120,18 @@ export async function createMonitor(input: {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { success: false, error: "Пользователь не авторизован" };
+
+  const validationError = validateMonitorUrl(input.url);
+  if (validationError) {
+    return { success: false, error: validationError };
+  }
+
+  if (input.interval_minutes && input.interval_minutes < 1) {
+    return {
+      success: false,
+      error: "Интервал мониторинга должен быть не меньше 1 минуты.",
+    };
+  }
 
   const payload = {
     user_id: user.id,

@@ -10,7 +10,7 @@
 1. Interactive testing pattern
    `UnifiedApiTester` executes manual and generated tests and participates in placeholder-aware execution flows.
 2. Monitoring runner pattern
-   Scheduled execution invokes `/api/monitor/run`, loads due monitor configs, records monitor runs, and updates monitor state.
+   Scheduled execution invokes `/api/monitor/run`, loads due monitor configs, records monitor runs, updates monitor state, and now enforces cron secret + request-rate guardrails.
 3. Alert fanout pattern
    Failure paths dispatch notifications through configured alert channels.
 4. Dashboard orchestration pattern
@@ -28,5 +28,4 @@
 - Proxy logic exists both as a server route and a root `proxy.ts` integration point.
 
 ## Noted Uncertainties
-- The exact dashboard analytics presentation is changing in the current working tree because `components/AnalyticsTab.tsx` is deleted while workspace files are modified.
-- There is still no canonical `docs/README.md` to validate intended subsystem boundaries against observed code.
+- Legal policy drafts were added under `docs/legal`, but they still require counsel review before external publication.
