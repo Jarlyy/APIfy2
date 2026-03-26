@@ -1,9 +1,10 @@
 # Active Context
 
 ## Current Task
-Shift focus from the completed documentation/tooling alignment work to the remaining dashboard-polish scope under `DEL-006`.
+Synchronize Memory Bank with current `HEAD`, then extend the development plan and deliverables with the newly requested dark-theme scope (`DEL-008`) while continuing `DEL-006`.
 
 ## Current Findings
+- User requested adding a dedicated dark-theme item to the development plan; this is now tracked as a separate deliverable candidate.
 - `package.json` now declares `bun@1.3.10` as the canonical `packageManager`, and the direct `pnpm` dependency has been removed.
 - The repository now contains `bun.lock`; the obsolete `pnpm-lock.yaml` and `.npmrc` have been removed.
 - Root onboarding docs and supporting setup docs now use `bun install` and `bun dev`.
@@ -30,6 +31,6 @@ Shift focus from the completed documentation/tooling alignment work to the remai
 - Prefer workflow polish that removes disruptive full-page reloads from the dashboard experience when equivalent client-side state handoff is feasible.
 
 ## Next Actions
-- Keep project progress at 90% while `DEL-006` remains the only unfinished deliverable.
-- Continue dashboard productivity polish work beyond the restored analytics tab, focusing on any remaining UX rough edges in the workspace.
-- Continue DEL-006 polish with post-create monitor UX improvements such as validation hints and richer monitor details visualization.
+- Keep project progress at 90% with two open deliverables: `DEL-006` (in progress) and `DEL-008` (pending).
+- Continue dashboard productivity polish work under `DEL-006`, focusing on remaining workspace UX rough edges.
+- Plan and implement a dedicated dark-theme pass under `DEL-008` across dashboard/workspace surfaces with parity checks for light theme.
