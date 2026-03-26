@@ -2,6 +2,36 @@ import { sendAlert } from "@/lib/alerts";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { type NextRequest, NextResponse } from "next/server";
 
+const WINDOW_MS = 60_000;
+const MAX_REQUESTS_PER_WINDOW = 30;
+const requestLog = new Map<string, number[]>();
+
+function getClientKey(request: NextRequest) {
+  const forwardedFor = request.headers.get("x-forwarded-for");
+  if (forwardedFor) {
+    return forwardedFor.split(",")[0]?.trim() || "unknown";
+  }
+
+  return request.headers.get("x-real-ip") || "unknown";
+}
+
+function checkRateLimit(request: NextRequest) {
+  const key = getClientKey(request);
+  const now = Date.now();
+  const windowStart = now - WINDOW_MS;
+  const history =
+    requestLog.get(key)?.filter((value) => value >= windowStart) || [];
+
+  if (history.length >= MAX_REQUESTS_PER_WINDOW) {
+    requestLog.set(key, history);
+    return false;
+  }
+
+  history.push(now);
+  requestLog.set(key, history);
+  return true;
+}
+
 function normalizeHeaders(headers: unknown): Record<string, string> {
   if (!headers || typeof headers !== "object") return {};
   return Object.fromEntries(
@@ -13,15 +43,30 @@ function normalizeHeaders(headers: unknown): Record<string, string> {
 }
 
 async function runMonitoring(request: NextRequest) {
+  if (!checkRateLimit(request)) {
+    console.warn("[monitor.run] Rate limit exceeded");
+    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+  }
+
   const authHeader = request.headers.get("authorization");
   const expected = process.env.MONITOR_CRON_SECRET;
 
-  if (expected && authHeader !== `Bearer ${expected}`) {
+  if (!expected) {
+    console.error("[monitor.run] MONITOR_CRON_SECRET is not configured");
+    return NextResponse.json(
+      { error: "Cron secret is not configured" },
+      { status: 503 },
+    );
+  }
+
+  if (authHeader !== `Bearer ${expected}`) {
+    console.warn("[monitor.run] Unauthorized request rejected");
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const supabase = createAdminClient();
   const nowIso = new Date().toISOString();
+  const startedAt = Date.now();
 
   const { data: monitors, error } = await supabase
     .from("monitor_configs")
@@ -113,6 +158,10 @@ async function runMonitoring(request: NextRequest) {
 
     processed.push({ id: monitor.id, success, status: statusCode });
   }
+
+  console.info(
+    `[monitor.run] completed processed=${processed.length} duration_ms=${Date.now() - startedAt}`,
+  );
 
   return NextResponse.json({ ok: true, processed });
 }

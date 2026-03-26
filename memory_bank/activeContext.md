@@ -1,10 +1,14 @@
 # Active Context
 
 ## Current Task
-Continue implementation under the approved plan: deliver first concrete `DEL-008` step (theme toggle + persisted preference), while keeping `DEL-006` and `DEL-009` in the queue.
+Execute legal/security hardening for scheduled monitoring (points 1-4): authorization attestation in UI, public legal docs, URL safety constraints, and secure cron runner controls.
 
 ## Current Findings
 - `components/Header.tsx` now includes a user-facing theme toggle that switches light/dark mode and persists preference in `localStorage` while applying the `dark` class on `<html>`.
+- Monitoring creation now enforces user legal attestation in UI before monitor can be created.
+- Monitoring URL validation now blocks local/private targets and sensitive query patterns (`token`, `key`, `secret`, etc.) to reduce abuse risk.
+- `/api/monitor/run` now treats missing `MONITOR_CRON_SECRET` as a configuration error, adds rate limiting, and writes basic operational security logs.
+- Public draft legal docs were added under `docs/legal/` (ToS, Privacy, AUP) and linked from architecture/monitoring docs.
 - User requested adding a dedicated dark-theme item to the development plan; this is now tracked as a separate deliverable candidate.
 - User additionally requested adding monitoring migration to another cron service into the development plan.
 - `package.json` now declares `bun@1.3.10` as the canonical `packageManager`, and the direct `pnpm` dependency has been removed.
@@ -33,7 +37,8 @@ Continue implementation under the approved plan: deliver first concrete `DEL-008
 - Prefer workflow polish that removes disruptive full-page reloads from the dashboard experience when equivalent client-side state handoff is feasible.
 
 ## Next Actions
-- Keep project progress at 90% with three open deliverables: `DEL-006` (in progress), `DEL-008` (in progress), and `DEL-009` (pending).
+- Keep project progress at 90% with four open deliverables: `DEL-006` (in progress), `DEL-008` (in progress), `DEL-009` (pending), and `DEL-010` (in progress).
 - Continue dashboard productivity polish work under `DEL-006`, focusing on remaining workspace UX rough edges.
 - Continue dedicated dark-theme pass under `DEL-008` after initial toggle rollout, focusing on full dashboard/workspace parity and contrast validation.
 - Plan monitoring migration under `DEL-009`: replace current cron provider, update schedules/env, and validate `/api/monitor/run` trigger compatibility.
+- Continue DEL-010 by adding stronger audit retention guidance and legal text review with counsel before public release.

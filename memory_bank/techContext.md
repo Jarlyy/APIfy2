@@ -19,6 +19,8 @@
 - Cron entry in deployment configuration for the monitoring runner.
 - Service-role backed monitoring and alert workflows reflected in the schema and recent product plan.
 - Alert integrations include Slack, Telegram, and email channels at the product-design level.
+- Cron provider migration target: `cron-job.org` for frequent schedule triggering.
+- `/api/monitor/run` now relies on `MONITOR_CRON_SECRET` as mandatory auth and includes in-route rate limiting.
 
 ## Important Paths
 - Routes: `app/`

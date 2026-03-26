@@ -72,6 +72,7 @@ const DEFAULT_MONITOR_FORM = {
   expected_status: 200,
   sla_target: 99.9,
   alert_on_failure: true,
+  legalConfirmed: false,
 };
 
 export default function AnalyticsTab({ monitorDraft }: AnalyticsTabProps) {
@@ -411,6 +412,13 @@ export default function AnalyticsTab({ monitorDraft }: AnalyticsTabProps) {
       return;
     }
 
+    if (!newMonitor.legalConfirmed) {
+      setMonitorError(
+        "Подтвердите, что у вас есть право на мониторинг указанного endpoint.",
+      );
+      return;
+    }
+
     setCreatingMonitor(true);
     setMonitorError(null);
     setMonitorSuccess(null);
@@ -720,14 +728,14 @@ export default function AnalyticsTab({ monitorDraft }: AnalyticsTabProps) {
                 <Input
                   id="monitor-interval"
                   type="number"
-                  min={1440}
-                  step={60}
-                  placeholder="1440"
+                  min={1}
+                  step={1}
+                  placeholder="5"
                   value={newMonitor.interval_minutes}
                   onChange={(event) =>
                     setNewMonitor((prev) => ({
                       ...prev,
-                      interval_minutes: Number(event.target.value || 1440),
+                      interval_minutes: Number(event.target.value || 5),
                     }))
                   }
                 />
@@ -765,13 +773,32 @@ export default function AnalyticsTab({ monitorDraft }: AnalyticsTabProps) {
               </label>
             </div>
 
+            <label className="flex items-start gap-2 rounded-md border px-3 py-2 text-sm">
+              <input
+                type="checkbox"
+                checked={newMonitor.legalConfirmed}
+                onChange={(event) =>
+                  setNewMonitor((prev) => ({
+                    ...prev,
+                    legalConfirmed: event.target.checked,
+                  }))
+                }
+                className="mt-1"
+              />
+              <span>
+                Подтверждаю, что имею право на мониторинг этого endpoint и не
+                буду использовать систему для несанкционированного доступа.
+              </span>
+            </label>
+
             <div className="flex justify-end">
               <Button
                 onClick={handleCreateMonitor}
                 disabled={
                   creatingMonitor ||
                   !newMonitor.name.trim() ||
-                  !newMonitor.url.trim()
+                  !newMonitor.url.trim() ||
+                  !newMonitor.legalConfirmed
                 }
               >
                 <PlusCircle className="mr-2 h-4 w-4" />
