@@ -1,10 +1,11 @@
 # Active Context
 
 ## Current Task
-Synchronize Memory Bank with current `HEAD`, then extend the development plan and deliverables with the newly requested dark-theme scope (`DEL-008`) while continuing `DEL-006`.
+Track newly expanded planning scope in Memory Bank: continue `DEL-006`, keep `DEL-008` pending, and add `DEL-009` for migrating monitoring to an alternative cron service.
 
 ## Current Findings
 - User requested adding a dedicated dark-theme item to the development plan; this is now tracked as a separate deliverable candidate.
+- User additionally requested adding monitoring migration to another cron service into the development plan.
 - `package.json` now declares `bun@1.3.10` as the canonical `packageManager`, and the direct `pnpm` dependency has been removed.
 - The repository now contains `bun.lock`; the obsolete `pnpm-lock.yaml` and `.npmrc` have been removed.
 - Root onboarding docs and supporting setup docs now use `bun install` and `bun dev`.
@@ -31,6 +32,7 @@ Synchronize Memory Bank with current `HEAD`, then extend the development plan an
 - Prefer workflow polish that removes disruptive full-page reloads from the dashboard experience when equivalent client-side state handoff is feasible.
 
 ## Next Actions
-- Keep project progress at 90% with two open deliverables: `DEL-006` (in progress) and `DEL-008` (pending).
+- Keep project progress at 90% with three open deliverables: `DEL-006` (in progress), `DEL-008` (pending), and `DEL-009` (pending).
 - Continue dashboard productivity polish work under `DEL-006`, focusing on remaining workspace UX rough edges.
 - Plan and implement a dedicated dark-theme pass under `DEL-008` across dashboard/workspace surfaces with parity checks for light theme.
+- Plan monitoring migration under `DEL-009`: replace current cron provider, update schedules/env, and validate `/api/monitor/run` trigger compatibility.
