@@ -921,7 +921,7 @@ export default function AnalyticsTab({ monitorDraft }: AnalyticsTabProps) {
                           width={70}
                         />
                         <Tooltip
-                          formatter={(value: number | null) =>
+                          formatter={(value) =>
                             typeof value === "number"
                               ? [`${value} ms`, "Отклик"]
                               : ["Нет данных", "Отклик"]
