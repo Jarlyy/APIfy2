@@ -27,8 +27,6 @@ import {
 } from "lucide-react";
 import { type ReactNode, useEffect, useMemo, useState } from "react";
 import {
-  Area,
-  AreaChart,
   Bar,
   BarChart,
   CartesianGrid,
@@ -183,34 +181,24 @@ export default function AnalyticsTab({ monitorDraft }: AnalyticsTabProps) {
     };
   }, [selectedMonitorRuns, monitors]);
 
-  const uptimeByDay = useMemo(() => {
-    const grouped = new Map<string, { total: number; success: number }>();
-
-    selectedMonitorRuns.forEach((run) => {
-      const day = new Date(run.executed_at).toISOString().slice(0, 10);
-      if (!grouped.has(day)) {
-        grouped.set(day, { total: 0, success: 0 });
-      }
-
-      const current = grouped.get(day);
-      if (!current) {
-        return;
-      }
-
-      current.total += 1;
-      if (run.success) {
-        current.success += 1;
-      }
+  const selectedMonitorResponseTrend = useMemo(() => {
+    const formatter = new Intl.DateTimeFormat("ru-RU", {
+      day: "2-digit",
+      month: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
     });
 
-    return [...grouped.entries()]
-      .map(([day, value]) => ({
-        day,
-        uptime: value.total
-          ? Number(((value.success / value.total) * 100).toFixed(2))
-          : 0,
-      }))
-      .sort((a, b) => a.day.localeCompare(b.day));
+    return [...selectedMonitorRuns]
+      .sort(
+        (a, b) =>
+          new Date(a.executed_at).getTime() - new Date(b.executed_at).getTime(),
+      )
+      .slice(-30)
+      .map((run) => ({
+        label: formatter.format(new Date(run.executed_at)),
+        responseTime: run.response_time_ms,
+      }));
   }, [selectedMonitorRuns]);
 
   const serviceOptions = useMemo(() => {
@@ -910,22 +898,54 @@ export default function AnalyticsTab({ monitorDraft }: AnalyticsTabProps) {
                 </div>
               </div>
 
-              <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={uptimeByDay}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="day" />
-                    <YAxis domain={[0, 100]} />
-                    <Tooltip />
-                    <Area
-                      type="monotone"
-                      dataKey="uptime"
-                      stroke="#22c55e"
-                      fill="#22c55e33"
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base">
+                    Отклик сервера по последним запускам
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="h-64">
+                  {selectedMonitorResponseTrend.some(
+                    (point) => typeof point.responseTime === "number",
+                  ) ? (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={selectedMonitorResponseTrend}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis
+                          dataKey="label"
+                          minTickGap={24}
+                          tick={{ fontSize: 12 }}
+                        />
+                        <YAxis
+                          tickFormatter={(value) => `${value} ms`}
+                          width={70}
+                        />
+                        <Tooltip
+                          formatter={(value: number | null) =>
+                            typeof value === "number"
+                              ? [`${value} ms`, "Отклик"]
+                              : ["Нет данных", "Отклик"]
+                          }
+                          labelFormatter={(label) => `Запуск: ${label}`}
+                        />
+                        <Line
+                          type="monotone"
+                          dataKey="responseTime"
+                          stroke="#3b82f6"
+                          strokeWidth={2}
+                          dot={{ r: 3 }}
+                          activeDot={{ r: 5 }}
+                          connectNulls={false}
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">
+                      Пока нет замеров времени отклика для выбранного монитора.
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
             </>
           )}
         </CardContent>

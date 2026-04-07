@@ -1,9 +1,11 @@
 # Active Context
 
 ## Current Task
-Execute legal/security hardening for scheduled monitoring (points 1-4): authorization attestation in UI, public legal docs, URL safety constraints, and secure cron runner controls.
+Adjust monitoring analytics so the selected monitor chart shows actual server response time per run instead of the current aggregated uptime graph.
 
 ## Current Findings
+- The selected monitor chart in `components/AnalyticsTab.tsx` currently renders `uptimeByDay`, which aggregates run success into daily uptime percentages and can look misleading when the user expects raw response-time data from cron monitoring.
+- The selected monitor analytics view now renders the latest `monitor_runs.response_time_ms` values as a response-time trend for the active monitor, while keeping uptime as a summary KPI instead of the main chart.
 - `components/Header.tsx` now includes a user-facing theme toggle that switches light/dark mode and persists preference in `localStorage` while applying the `dark` class on `<html>`.
 - Monitoring creation now enforces user legal attestation in UI before monitor can be created.
 - Monitoring URL validation now blocks local/private targets and sensitive query patterns (`token`, `key`, `secret`, etc.) to reduce abuse risk.
@@ -38,6 +40,7 @@ Execute legal/security hardening for scheduled monitoring (points 1-4): authoriz
 
 ## Next Actions
 - Keep project progress at 90% with four open deliverables: `DEL-006` (in progress), `DEL-008` (in progress), `DEL-009` (pending), and `DEL-010` (in progress).
+- Validate the updated response-time chart against fresh cron-produced monitor runs and refine tooltip/label density if the timeline becomes crowded.
 - Continue dashboard productivity polish work under `DEL-006`, focusing on remaining workspace UX rough edges.
 - Continue dedicated dark-theme pass under `DEL-008` after initial toggle rollout, focusing on full dashboard/workspace parity and contrast validation.
 - Plan monitoring migration under `DEL-009`: replace current cron provider, update schedules/env, and validate `/api/monitor/run` trigger compatibility.

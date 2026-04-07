@@ -4,6 +4,7 @@
 - Memory Bank structure is synchronized with the root `AGENTS.md` requirements.
 - The mandatory root files exist and now reflect the latest upstream monitoring work plus the current local working tree.
 - `memory_bank/ui_extension/` has been added to document public pages and key UI components.
+- `memory_bank/ui_extension/components/analytics-tab.md` now documents the monitoring analytics panel and its response-time trend behavior.
 - Canonical project progress is now tracked through `projectbrief.md` deliverables: 90% complete (DEL-006 in progress, DEL-008 in progress, DEL-009 pending, DEL-010 in progress).
 - The `pnpm` to `bun` migration commit has been reviewed against the current tree and Memory Bank has been synchronized to that state.
 - `docs/README.md` has been created as the canonical high-level architecture source required by `AGENTS.md`.
@@ -14,6 +15,7 @@
 - Monitor creation plumbing now supports richer request payloads in the data layer, including method, headers, body, expected status, and alert preferences.
 - Analytics monitor creation UI now exposes manual-test-like request controls (method, headers, body, auth modes, expected status, SLA, and alert toggles), and monitor summary cards show key request settings.
 - Manual testing now includes a direct handoff into monitoring: the current request can be sent to the analytics tab and pre-filled into the monitor creation form.
+- The selected monitor chart now plots actual server response time for recent cron runs instead of daily aggregated uptime percentages.
 
 ## Known Issues
 - `bun` is installed locally, but the sandbox shell still does not expose it in `PATH`, so Bun-based commands should use `C:\Users\Admin\.bun\bin\bun.exe` until the terminal session is restarted.
@@ -21,6 +23,7 @@
 - `biome.json` contains targeted rule relaxations for legacy patterns (`forEach`, non-null assertions, some a11y checks) so that the codebase can pass lint without an immediate large refactor.
 
 ## Changelog
+- 2026-04-07: Replaced the selected-monitor analytics chart in `components/AnalyticsTab.tsx` with a recent response-time trend based on `monitor_runs.response_time_ms`, and documented the component in `memory_bank/ui_extension/components/analytics-tab.md`.
 - 2026-03-26: Implemented monitoring legal/security hardening points 1-4: user attestation checkbox in monitor UI, URL safety validation, cron endpoint secret enforcement + rate limiting + security logs, and draft legal docs (`docs/legal/*`).
 - 2026-03-26: Started `DEL-008` implementation by adding a persisted light/dark theme toggle in `components/Header.tsx` that toggles the `dark` class on `<html>`.
 - 2026-03-26: Added planning scope for monitoring migration to an alternative cron service in `docs/development-plan.md` and added canonical deliverable `DEL-009` in `projectbrief.md`.
@@ -48,5 +51,5 @@
 - 2026-03-12: Supabase schema was made idempotent for reruns and Memory Bank was previously re-synced.
 
 ## Change Control
-- last_checked_commit: `ff188a2`
-- checked_on: `2026-03-26`
+- last_checked_commit: `68ef94c`
+- checked_on: `2026-04-07`
