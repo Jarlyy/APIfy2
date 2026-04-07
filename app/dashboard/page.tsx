@@ -71,7 +71,7 @@ function DashboardContent() {
         monitorDraft={monitorDraft}
         onCreateMonitorFromTest={(nextMonitorDraft) => {
           setMonitorDraft(nextMonitorDraft);
-          setActiveTab("analytics");
+          setActiveTab("monitoring");
         }}
         testData={testData ?? undefined}
       />

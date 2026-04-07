@@ -9,7 +9,8 @@ import { UnifiedApiTester } from "./UnifiedApiTester";
 const OpenApiImport = dynamic(() => import("./OpenApiImport"));
 const HistoryTab = dynamic(() => import("./HistoryTab"));
 const FavoritesTab = dynamic(() => import("./FavoritesTab"));
-const AnalyticsTab = dynamic(() => import("./AnalyticsTab"));
+const MonitoringTab = dynamic(() => import("./MonitoringTab"));
+const RequestAnalyticsTab = dynamic(() => import("./RequestAnalyticsTab"));
 
 interface MainWorkspaceProps {
   userId: string;
@@ -80,8 +81,11 @@ export default function MainWorkspace({
           </>
         );
 
+      case "monitoring":
+        return <MonitoringTab monitorDraft={monitorDraft} />;
+
       case "analytics":
-        return <AnalyticsTab monitorDraft={monitorDraft} />;
+        return <RequestAnalyticsTab />;
 
       case "history":
         return <HistoryTab />;

@@ -4,12 +4,12 @@
 `components/AnalyticsTab.tsx`
 
 ## Role
-Shows monitoring analytics, monitor management, and historical API testing insights inside the dashboard analytics tab.
+Legacy combined monitoring-and-analytics component kept in the repo but no longer mounted by `MainWorkspace`.
 
 ## Inputs
 - `monitorDraft`
+- `mode`
 
 ## Notes
-- Loads monitor configs and monitor run history from Supabase-backed helpers in `lib/monitoring.ts`.
-- The selected monitor summary keeps aggregate KPI cards (`uptime`, average response, run count), while the main chart now visualizes recent `response_time_ms` values per monitor run.
-- The monitor creation form supports request method, headers, body, auth helpers, expected status, SLA target, and legal confirmation.
+- The dashboard now prefers `MonitoringTab.tsx` for scheduled monitoring and `RequestAnalyticsTab.tsx` for request-history analytics.
+- This file still reflects the older combined implementation and should be treated as transitional code until removed or fully refactored.
