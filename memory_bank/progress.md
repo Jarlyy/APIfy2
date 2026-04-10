@@ -4,9 +4,11 @@
 - Memory Bank structure is synchronized with the root `AGENTS.md` requirements.
 - The mandatory root files exist and now reflect the latest upstream monitoring work plus the current local working tree.
 - `memory_bank/ui_extension/` has been added to document public pages and key UI components.
-- `memory_bank/ui_extension/components/analytics-tab.md` now documents the monitoring analytics panel and its response-time trend behavior.
 - Dashboard navigation now splits monitoring into its own tab, and request-history analytics lives in a separate dedicated tab.
-- Canonical project progress is now tracked through `projectbrief.md` deliverables: 90% complete (DEL-006 in progress, DEL-008 in progress, DEL-009 pending, DEL-010 in progress).
+- Legal/security hardening for scheduled monitoring is now evaluated as complete against the current plan scope.
+- The legacy combined `components/AnalyticsTab.tsx` component has been removed after the dashboard tab split.
+- User-facing Russian copy in the dashboard header, monitoring tab, and request analytics tab has been normalized after the tab split.
+- Canonical project progress is now tracked through `projectbrief.md` deliverables: 92% complete (DEL-006 in progress, DEL-008 in progress, DEL-009 pending, DEL-010 completed).
 - The `pnpm` to `bun` migration commit has been reviewed against the current tree and Memory Bank has been synchronized to that state.
 - `docs/README.md` has been created as the canonical high-level architecture source required by `AGENTS.md`.
 - The repository now uses Biome as the active lint tool, and `bun run lint` completes successfully.
@@ -24,6 +26,9 @@
 - `biome.json` contains targeted rule relaxations for legacy patterns (`forEach`, non-null assertions, some a11y checks) so that the codebase can pass lint without an immediate large refactor.
 
 ## Changelog
+- 2026-04-10: Cleaned up garbled user-facing text in `Header.tsx`, `MonitoringTab.tsx`, and `RequestAnalyticsTab.tsx` so the separated dashboard tabs render consistent UTF-8 Russian copy.
+- 2026-04-10: Removed the unused legacy `components/AnalyticsTab.tsx` component and its obsolete Memory Bank note after splitting monitoring and request analytics into separate tabs.
+- 2026-04-10: Re-evaluated plan progress against the current codebase, marked `DEL-010` as completed, and raised canonical project completion to 92%.
 - 2026-04-07: Split dashboard monitoring into a dedicated `MonitoringTab`, added separate `RequestAnalyticsTab` for request-history analytics, and redirected manual-test monitor handoff to the new monitoring tab.
 - 2026-04-07: Replaced the selected-monitor analytics chart in `components/AnalyticsTab.tsx` with a recent response-time trend based on `monitor_runs.response_time_ms`, and documented the component in `memory_bank/ui_extension/components/analytics-tab.md`.
 - 2026-03-26: Implemented monitoring legal/security hardening points 1-4: user attestation checkbox in monitor UI, URL safety validation, cron endpoint secret enforcement + rate limiting + security logs, and draft legal docs (`docs/legal/*`).
@@ -53,5 +58,5 @@
 - 2026-03-12: Supabase schema was made idempotent for reruns and Memory Bank was previously re-synced.
 
 ## Change Control
-- last_checked_commit: `68ef94c`
-- checked_on: `2026-04-07`
+- last_checked_commit: `37eabdc`
+- checked_on: `2026-04-10`

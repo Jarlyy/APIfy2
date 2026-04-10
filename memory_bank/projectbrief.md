@@ -47,7 +47,7 @@ APIfy2 is a Next.js application for API exploration, manual request execution, O
 | DEL-007 | Operational documentation and tooling alignment with AGENTS requirements | completed | 10 |
 | DEL-008 | Полноценная темная тема интерфейса (dashboard + workspace consistency) | in_progress | 2 |
 | DEL-009 | Миграция мониторинга на альтернативный cron-сервис | pending | 2 |
-| DEL-010 | Legal/security guardrails для расписного мониторинга | in_progress | 2 |
+| DEL-010 | Legal/security guardrails для расписного мониторинга | completed | 2 |
 
 ## Project Completion
-Project completion based on completed deliverables: 90%.
+Project completion based on completed deliverables: 92%.

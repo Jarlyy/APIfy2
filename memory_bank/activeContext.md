@@ -1,13 +1,14 @@
 # Active Context
 
 ## Current Task
-Separate monitoring into its own dashboard tab so monitor management and monitor-run response charts no longer share the same surface with general API analytics.
+Continue `DEL-006` workspace polish by cleaning up user-facing copy and encoding issues after the dashboard tab split.
 
 ## Current Findings
-- `components/AnalyticsTab.tsx` currently mixes two distinct jobs: monitor CRUD/run visibility and historical request analytics, which makes the dashboard navigation feel muddled.
-- The selected monitor chart in `components/AnalyticsTab.tsx` currently renders `uptimeByDay`, which aggregates run success into daily uptime percentages and can look misleading when the user expects raw response-time data from cron monitoring.
-- The selected monitor analytics view now renders the latest `monitor_runs.response_time_ms` values as a response-time trend for the active monitor, while keeping uptime as a summary KPI instead of the main chart.
-- Dashboard routing now uses a dedicated `components/MonitoringTab.tsx` for monitor management and `components/RequestAnalyticsTab.tsx` for request-history analytics, while the manual-test handoff opens `tab=monitoring`.
+- Plan re-evaluation shows that the legal/security hardening scope for scheduled monitoring is already implemented end to end in the codebase, so `DEL-010` is now marked `completed`.
+- `MainWorkspace` routes monitoring to `MonitoringTab` and request analytics to `RequestAnalyticsTab`; the old combined `AnalyticsTab` has been removed.
+- The selected monitor view now renders recent `monitor_runs.response_time_ms` values as a response-time trend, while keeping uptime as a summary KPI instead of the main chart.
+- Dashboard routing uses dedicated `components/MonitoringTab.tsx` and `components/RequestAnalyticsTab.tsx`, and the manual-test handoff opens `tab=monitoring`.
+- `components/Header.tsx`, `components/MonitoringTab.tsx`, and `components/RequestAnalyticsTab.tsx` have now been normalized to clean UTF-8 Russian copy so the separated tabs no longer show mojibake in the UI.
 - `components/Header.tsx` now includes a user-facing theme toggle that switches light/dark mode and persists preference in `localStorage` while applying the `dark` class on `<html>`.
 - Monitoring creation now enforces user legal attestation in UI before monitor can be created.
 - Monitoring URL validation now blocks local/private targets and sensitive query patterns (`token`, `key`, `secret`, etc.) to reduce abuse risk.
@@ -26,12 +27,11 @@ Separate monitoring into its own dashboard tab so monitor management and monitor
 - Enabling Biome on the existing codebase required auto-formatting the supported source files and relaxing a small set of legacy a11y/style rules in `biome.json`.
 - The analytics tab was not removed from the codebase; the immediate UX issue was the non-responsive dashboard header, where tabs could slide out of view on narrower widths.
 - `components/Header.tsx` has been updated so the dashboard tabs stay accessible via horizontal scrolling on compact layouts.
-- The working analytics content has now been restored by bringing back `components/AnalyticsTab.tsx` and reconnecting it in `components/MainWorkspace.tsx`.
+- The working analytics content is now split into dedicated monitoring and request-analytics tabs in the dashboard.
 - Re-running tests from `History` and `Favorites` no longer requires a full page reload; the dashboard now consumes pending test data through a shared client-side event flow.
 - The monitoring data layer now accepts richer request configuration during monitor creation: HTTP method, custom headers, optional body, expected status, and failure alert preferences.
-- `components/AnalyticsTab.tsx` monitor creation UI is now aligned with manual testing capabilities for request setup: method, headers JSON, body, auth modes (`none`, `bearer`, `api-key`, `basic`), expected status, and failure alert toggle.
-- The manual testing workspace can now hand off the current request configuration directly into monitor creation, switching the dashboard to the analytics tab and pre-filling the monitor form without a page reload.
-- `components/AnalyticsTab.tsx` was rebuilt in clean UTF-8 after a text-encoding regression corrupted monitor-form labels and analytics copy in the UI.
+- `components/MonitoringTab.tsx` monitor creation UI is aligned with manual testing capabilities for request setup: method, headers JSON, body, auth modes (`none`, `bearer`, `api-key`, `basic`), expected status, and failure alert toggle.
+- The manual testing workspace can now hand off the current request configuration directly into monitor creation, switching the dashboard to the monitoring tab and pre-filling the monitor form without a page reload.
 - Vercel deploys now run through `bun` correctly; the remaining deployment stopper found in this session was a strict TypeScript mismatch in `app/dashboard/page.tsx`, where `testData` needed `undefined` instead of `null`.
 
 ## Decisions
@@ -41,9 +41,8 @@ Separate monitoring into its own dashboard tab so monitor management and monitor
 - Prefer workflow polish that removes disruptive full-page reloads from the dashboard experience when equivalent client-side state handoff is feasible.
 
 ## Next Actions
-- Keep project progress at 90% with four open deliverables: `DEL-006` (in progress), `DEL-008` (in progress), `DEL-009` (pending), and `DEL-010` (in progress).
-- Decide whether to remove the legacy combined `components/AnalyticsTab.tsx` after the new tabs settle, or fully refactor callers/tests to eliminate the transitional duplicate.
+- Keep project progress at 92% with three open deliverables: `DEL-006` (in progress), `DEL-008` (in progress), and `DEL-009` (pending).
+- Review the separated monitoring and analytics tabs for any remaining UX duplication beyond copy cleanup, especially empty states and visual hierarchy.
 - Continue dashboard productivity polish work under `DEL-006`, focusing on remaining workspace UX rough edges.
 - Continue dedicated dark-theme pass under `DEL-008` after initial toggle rollout, focusing on full dashboard/workspace parity and contrast validation.
 - Plan monitoring migration under `DEL-009`: replace current cron provider, update schedules/env, and validate `/api/monitor/run` trigger compatibility.
-- Continue DEL-010 by adding stronger audit retention guidance and legal text review with counsel before public release.
