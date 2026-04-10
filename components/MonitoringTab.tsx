@@ -626,9 +626,12 @@ export default function MonitoringTab({ monitorDraft }: MonitoringTabProps) {
           <div className="space-y-3">
             <h4 className="text-sm font-semibold">Список мониторов</h4>
             {monitors.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                Мониторов пока нет. Создайте первый монитор выше.
-              </p>
+              <div className="rounded-md border border-dashed px-4 py-6 text-center">
+                <p className="text-sm text-muted-foreground">
+                  Мониторов пока нет. Создайте первый монитор выше или
+                  перенесите готовый запрос из вкладки тестирования.
+                </p>
+              </div>
             ) : (
               <div className="space-y-2">
                 {monitors.map((monitor) => (

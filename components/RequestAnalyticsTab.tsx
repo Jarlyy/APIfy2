@@ -218,6 +218,9 @@ export default function RequestAnalyticsTab() {
     setSelectedEndpoint("all");
   };
 
+  const hasHistory = history.length > 0;
+  const hasFilteredHistory = filteredHistory.length > 0;
+
   if (loading) {
     return (
       <div className="py-12 text-center text-zinc-500 dark:text-zinc-400">
@@ -288,150 +291,177 @@ export default function RequestAnalyticsTab() {
         </CardContent>
       </Card>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
-        <MetricCard
-          title="Всего тестов"
-          icon={<Activity className="h-4 w-4" />}
-          value={stats.total}
-        />
-        <MetricCard
-          title="Успешные"
-          icon={<CheckCircle className="h-4 w-4 text-green-600" />}
-          value={stats.success}
-        />
-        <MetricCard
-          title="Ошибки"
-          icon={<XCircle className="h-4 w-4 text-red-600" />}
-          value={stats.error}
-        />
-        <MetricCard
-          title="Успешность"
-          icon={<Badge className="h-4 px-1">%</Badge>}
-          value={`${stats.successRate}%`}
-        />
-        <MetricCard
-          title="Средний отклик"
-          icon={<Clock className="h-4 w-4 text-blue-600" />}
-          value={`${stats.avgResponse} мс`}
-        />
-      </div>
-
-      <div className="grid gap-4 lg:grid-cols-2">
+      {!hasHistory ? (
         <Card>
-          <CardHeader>
-            <CardTitle>Тренд времени отклика (последние 30 тестов)</CardTitle>
-          </CardHeader>
-          <CardContent className="h-72">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={responseTrend}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="idx" />
-                <YAxis />
-                <Tooltip />
-                <Line
-                  type="monotone"
-                  dataKey="response"
-                  stroke="#3b82f6"
-                  strokeWidth={2}
-                  dot={false}
-                />
-              </LineChart>
-            </ResponsiveContainer>
+          <CardContent className="py-10 text-center text-sm text-muted-foreground">
+            История запросов пока пуста. Выполните несколько тестов во вкладке
+            тестирования, и здесь появятся графики и сравнение сервисов.
           </CardContent>
         </Card>
-
+      ) : !hasFilteredHistory ? (
         <Card>
-          <CardHeader>
-            <CardTitle>Распределение статусов</CardTitle>
-          </CardHeader>
-          <CardContent className="h-72">
-            {statusPieData.length === 0 ? (
-              <p className="text-sm text-zinc-500 dark:text-zinc-400">
-                Пока нет данных для этого графика.
-              </p>
-            ) : (
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={statusPieData}
-                    dataKey="value"
-                    nameKey="name"
-                    cx="50%"
-                    cy="50%"
-                    outerRadius={90}
-                    label
-                  >
-                    {statusPieData.map((entry) => (
-                      <Cell key={entry.name} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                </PieChart>
-              </ResponsiveContainer>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>
-            {selectedService === "all"
-              ? "Сравнение сервисов"
-              : "Сравнение эндпоинтов"}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {performanceRows.length === 0 ? (
-            <p className="text-sm text-zinc-500 dark:text-zinc-400">
-              Пока нет данных для аналитики.
+          <CardContent className="flex flex-col items-center gap-3 py-10 text-center">
+            <p className="text-sm text-muted-foreground">
+              По текущим фильтрам ничего не найдено. Сбросьте фильтры или
+              выберите другой сервис.
             </p>
-          ) : (
-            <div className="space-y-6">
-              <div className="h-72">
+            <Button variant="outline" onClick={resetFilters}>
+              Сбросить фильтры
+            </Button>
+          </CardContent>
+        </Card>
+      ) : (
+        <>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+            <MetricCard
+              title="Всего тестов"
+              icon={<Activity className="h-4 w-4" />}
+              value={stats.total}
+            />
+            <MetricCard
+              title="Успешные"
+              icon={<CheckCircle className="h-4 w-4 text-green-600" />}
+              value={stats.success}
+            />
+            <MetricCard
+              title="Ошибки"
+              icon={<XCircle className="h-4 w-4 text-red-600" />}
+              value={stats.error}
+            />
+            <MetricCard
+              title="Успешность"
+              icon={<Badge className="h-4 px-1">%</Badge>}
+              value={`${stats.successRate}%`}
+            />
+            <MetricCard
+              title="Средний отклик"
+              icon={<Clock className="h-4 w-4 text-blue-600" />}
+              value={`${stats.avgResponse} мс`}
+            />
+          </div>
+
+          <div className="grid gap-4 lg:grid-cols-2">
+            <Card>
+              <CardHeader>
+                <CardTitle>
+                  Тренд времени отклика (последние 30 тестов)
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="h-72">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={performanceRows}>
+                  <LineChart data={responseTrend}>
                     <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" hide />
+                    <XAxis dataKey="idx" />
                     <YAxis />
                     <Tooltip />
-                    <Bar
-                      dataKey="avgResponse"
-                      fill="#8b5cf6"
-                      radius={[6, 6, 0, 0]}
+                    <Line
+                      type="monotone"
+                      dataKey="response"
+                      stroke="#3b82f6"
+                      strokeWidth={2}
+                      dot={false}
                     />
-                  </BarChart>
+                  </LineChart>
                 </ResponsiveContainer>
-              </div>
+              </CardContent>
+            </Card>
 
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b text-left text-zinc-600 dark:text-zinc-400">
-                      <th className="py-2 pr-3">
-                        {selectedService === "all" ? "Сервис" : "Эндпоинт"}
-                      </th>
-                      <th className="py-2 pr-3">Тестов</th>
-                      <th className="py-2 pr-3">Успешность</th>
-                      <th className="py-2 pr-3">Ср. отклик</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {performanceRows.map((row) => (
-                      <tr key={row.name} className="border-b last:border-0">
-                        <td className="py-2 pr-3 font-medium">{row.name}</td>
-                        <td className="py-2 pr-3">{row.total}</td>
-                        <td className="py-2 pr-3">{row.successRate}%</td>
-                        <td className="py-2 pr-3">{row.avgResponse} мс</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle>Распределение статусов</CardTitle>
+              </CardHeader>
+              <CardContent className="h-72">
+                {statusPieData.length === 0 ? (
+                  <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                    Пока нет данных для этого графика.
+                  </p>
+                ) : (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={statusPieData}
+                        dataKey="value"
+                        nameKey="name"
+                        cx="50%"
+                        cy="50%"
+                        outerRadius={90}
+                        label
+                      >
+                        {statusPieData.map((entry) => (
+                          <Cell key={entry.name} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip />
+                    </PieChart>
+                  </ResponsiveContainer>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>
+                {selectedService === "all"
+                  ? "Сравнение сервисов"
+                  : "Сравнение эндпоинтов"}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {performanceRows.length === 0 ? (
+                <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                  Пока нет данных для аналитики.
+                </p>
+              ) : (
+                <div className="space-y-6">
+                  <div className="h-72">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={performanceRows}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="name" hide />
+                        <YAxis />
+                        <Tooltip />
+                        <Bar
+                          dataKey="avgResponse"
+                          fill="#8b5cf6"
+                          radius={[6, 6, 0, 0]}
+                        />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b text-left text-zinc-600 dark:text-zinc-400">
+                          <th className="py-2 pr-3">
+                            {selectedService === "all" ? "Сервис" : "Эндпоинт"}
+                          </th>
+                          <th className="py-2 pr-3">Тестов</th>
+                          <th className="py-2 pr-3">Успешность</th>
+                          <th className="py-2 pr-3">Ср. отклик</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {performanceRows.map((row) => (
+                          <tr key={row.name} className="border-b last:border-0">
+                            <td className="py-2 pr-3 font-medium">
+                              {row.name}
+                            </td>
+                            <td className="py-2 pr-3">{row.total}</td>
+                            <td className="py-2 pr-3">{row.successRate}%</td>
+                            <td className="py-2 pr-3">{row.avgResponse} мс</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </>
+      )}
     </div>
   );
 }

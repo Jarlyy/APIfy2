@@ -9,6 +9,7 @@ Continue `DEL-006` workspace polish by cleaning up user-facing copy and encoding
 - The selected monitor view now renders recent `monitor_runs.response_time_ms` values as a response-time trend, while keeping uptime as a summary KPI instead of the main chart.
 - Dashboard routing uses dedicated `components/MonitoringTab.tsx` and `components/RequestAnalyticsTab.tsx`, and the manual-test handoff opens `tab=monitoring`.
 - `components/Header.tsx`, `components/MonitoringTab.tsx`, and `components/RequestAnalyticsTab.tsx` have now been normalized to clean UTF-8 Russian copy so the separated tabs no longer show mojibake in the UI.
+- The separated monitoring and analytics tabs now have explicit empty states, so users are guided when there is no history yet or when no monitors have been created.
 - `components/Header.tsx` now includes a user-facing theme toggle that switches light/dark mode and persists preference in `localStorage` while applying the `dark` class on `<html>`.
 - Monitoring creation now enforces user legal attestation in UI before monitor can be created.
 - Monitoring URL validation now blocks local/private targets and sensitive query patterns (`token`, `key`, `secret`, etc.) to reduce abuse risk.
@@ -42,7 +43,7 @@ Continue `DEL-006` workspace polish by cleaning up user-facing copy and encoding
 
 ## Next Actions
 - Keep project progress at 92% with three open deliverables: `DEL-006` (in progress), `DEL-008` (in progress), and `DEL-009` (pending).
-- Review the separated monitoring and analytics tabs for any remaining UX duplication beyond copy cleanup, especially empty states and visual hierarchy.
+- Review the separated monitoring and analytics tabs for any remaining UX duplication beyond copy cleanup and empty states, especially visual hierarchy and post-create monitor flow.
 - Continue dashboard productivity polish work under `DEL-006`, focusing on remaining workspace UX rough edges.
 - Continue dedicated dark-theme pass under `DEL-008` after initial toggle rollout, focusing on full dashboard/workspace parity and contrast validation.
 - Plan monitoring migration under `DEL-009`: replace current cron provider, update schedules/env, and validate `/api/monitor/run` trigger compatibility.

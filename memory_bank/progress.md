@@ -8,6 +8,7 @@
 - Legal/security hardening for scheduled monitoring is now evaluated as complete against the current plan scope.
 - The legacy combined `components/AnalyticsTab.tsx` component has been removed after the dashboard tab split.
 - User-facing Russian copy in the dashboard header, monitoring tab, and request analytics tab has been normalized after the tab split.
+- Monitoring and request analytics now show clearer empty states when no monitors or history data exist.
 - Canonical project progress is now tracked through `projectbrief.md` deliverables: 92% complete (DEL-006 in progress, DEL-008 in progress, DEL-009 pending, DEL-010 completed).
 - The `pnpm` to `bun` migration commit has been reviewed against the current tree and Memory Bank has been synchronized to that state.
 - `docs/README.md` has been created as the canonical high-level architecture source required by `AGENTS.md`.
@@ -26,6 +27,7 @@
 - `biome.json` contains targeted rule relaxations for legacy patterns (`forEach`, non-null assertions, some a11y checks) so that the codebase can pass lint without an immediate large refactor.
 
 ## Changelog
+- 2026-04-10: Added explicit empty states in `MonitoringTab.tsx` and `RequestAnalyticsTab.tsx` so the split dashboard tabs stay understandable before data exists or when filters return nothing.
 - 2026-04-10: Cleaned up garbled user-facing text in `Header.tsx`, `MonitoringTab.tsx`, and `RequestAnalyticsTab.tsx` so the separated dashboard tabs render consistent UTF-8 Russian copy.
 - 2026-04-10: Removed the unused legacy `components/AnalyticsTab.tsx` component and its obsolete Memory Bank note after splitting monitoring and request analytics into separate tabs.
 - 2026-04-10: Re-evaluated plan progress against the current codebase, marked `DEL-010` as completed, and raised canonical project completion to 92%.
