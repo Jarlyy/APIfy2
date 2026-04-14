@@ -1,9 +1,19 @@
 # Active Context
 
 ## Current Task
-Continue `DEL-006` workspace polish by cleaning up user-facing copy and encoding issues after the dashboard tab split.
+Continue `DEL-006` workspace polish after adding in-place editing for saved scheduled monitors, focusing on remaining dashboard UX rough edges after the monitoring/request-analytics tab split.
 
 ## Current Findings
+- The selected monitor response-time chart now supports user-controlled X-axis ranges (`6h`, `24h`, `7d`, `30d`, `all`) so the visible time window is no longer fixed to a hardcoded recent slice.
+- Two follow-up UX items were explicitly added to the plan for the monitoring chart: adaptive X-axis label formatting by selected range and a per-monitor default chart range.
+- The monitor status switch now uses optimistic UI updates, so pause/resume changes appear immediately in the list and only roll back if the backend update fails.
+- The monitor status switch now keeps a stable layout regardless of `Активен`/`Пауза` label length and no longer uses disabled styling while the toggle request is in flight, avoiding the dimmed card and forbidden cursor UX regression.
+- Monitor pause/resume no longer emits a green success message; the monitor list now uses a compact switch-like status control so the action is communicated inline instead of via toast-style feedback.
+- Scheduled monitors can now be paused and resumed from `MonitoringTab` without deletion; resuming recalculates `next_run_at` from the stored interval so the schedule restarts cleanly.
+- Saved monitor configurations can now be edited in `components/MonitoringTab.tsx` without recreating the monitor: the existing form now supports create/edit modes and persists changes through `lib/monitoring.ts:updateMonitor`.
+- Editing a monitor now rehydrates stored auth/header settings back into the form and recalculates `next_run_at` when the monitoring interval changes, so updated schedules take effect predictably.
+- `docs/README.md` and `docs/development-plan.md` required synchronization with the post-split dashboard architecture and the current deliverable/tooling status.
+- `memory_bank/progress.md` had already described the latest dashboard changes, but its `last_checked_commit` still pointed to `37eabdc` instead of current `HEAD`.
 - Plan re-evaluation shows that the legal/security hardening scope for scheduled monitoring is already implemented end to end in the codebase, so `DEL-010` is now marked `completed`.
 - `MainWorkspace` routes monitoring to `MonitoringTab` and request analytics to `RequestAnalyticsTab`; the old combined `AnalyticsTab` has been removed.
 - The selected monitor view now renders recent `monitor_runs.response_time_ms` values as a response-time trend, while keeping uptime as a summary KPI instead of the main chart.
@@ -43,7 +53,8 @@ Continue `DEL-006` workspace polish by cleaning up user-facing copy and encoding
 
 ## Next Actions
 - Keep project progress at 92% with three open deliverables: `DEL-006` (in progress), `DEL-008` (in progress), and `DEL-009` (pending).
-- Review the separated monitoring and analytics tabs for any remaining UX duplication beyond copy cleanup and empty states, especially visual hierarchy and post-create monitor flow.
+- Continue `DEL-006` with the newly planned monitoring-chart follow-ups: adaptive X-axis labels and a per-monitor default chart range.
+- Review the separated monitoring and analytics tabs for any remaining UX duplication beyond copy cleanup and empty states, especially visual hierarchy plus the create/edit monitor flow.
 - Continue dashboard productivity polish work under `DEL-006`, focusing on remaining workspace UX rough edges.
 - Continue dedicated dark-theme pass under `DEL-008` after initial toggle rollout, focusing on full dashboard/workspace parity and contrast validation.
 - Plan monitoring migration under `DEL-009`: replace current cron provider, update schedules/env, and validate `/api/monitor/run` trigger compatibility.

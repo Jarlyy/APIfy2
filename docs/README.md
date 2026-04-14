@@ -34,11 +34,13 @@
 
 ## Ключевые UI-модули
 
-- `components/MainWorkspace.tsx`: контейнер верхнего уровня для вкладок `testing`, `favorites`, `import`, `analytics`, `history`.
+- `components/MainWorkspace.tsx`: контейнер верхнего уровня для вкладок `testing`, `favorites`, `import`, `monitoring`, `analytics`, `history`.
 - `components/UnifiedApiTester.tsx`: центральный сценарий ручного тестирования и AI-генерации исполняемых тестов.
 - `components/OpenApiImport.tsx`: импорт и разбор OpenAPI/Swagger-спецификаций.
+- `components/MonitoringTab.tsx`: отдельная dashboard-вкладка для создания мониторинга, списка мониторов и просмотра recent response-time runs.
+- `components/RequestAnalyticsTab.tsx`: отдельная dashboard-вкладка для аналитики по сохранённой истории ручных API-запросов.
 - `components/HistoryTab.tsx` и `components/FavoritesTab.tsx`: работа с сохранёнными запросами пользователя.
-- `components/Header.tsx`: навигация по workspace.
+- `components/Header.tsx`: навигация по workspace, горизонтальный scroll вкладок на узких экранах и пользовательский light/dark toggle.
 - `components/AiAnalysis.tsx` и `components/AIProviderSelector.tsx`: AI-анализ и выбор AI-провайдера.
 
 ## Серверные маршруты
@@ -96,7 +98,7 @@
 
 - Пакетный менеджер проекта: `bun`.
 - Dev-сервер управляется пользователем и не должен запускаться/останавливаться агентом.
-- В репозитории есть требование использовать `Biome`, но фактический `lint`-pipeline пока ещё опирается на `next lint` и требует отдельного выравнивания.
+- Канонический lint-tooling проекта: `Biome` через `biome.json` и `package.json` scripts.
 - В `app/layout.tsx` используются `next/font/google`, поэтому в ограниченных сетевых средах возможны сбои при получении шрифтов.
 
 ## Основные директории
@@ -111,6 +113,6 @@
 
 ## Актуальные архитектурные пробелы
 
-- Вкладка `analytics` в `MainWorkspace` пока остаётся placeholder-секцией и не выделена в самостоятельный UI-модуль.
-- Tooling ещё не доведён до полного соответствия требованиям `AGENTS.md`: Biome не оформлен как штатный линтер проекта.
+- Полная визуальная консистентность светлой и тёмной тем между dashboard и рабочими экранами ещё не доведена до конца.
+- Мониторинг всё ещё завязан на текущий cron/job-runner и ожидает отдельной миграции на альтернативный cron-сервис.
 - Метаданные приложения в `app/layout.tsx` пока остаются дефолтными и не отражают продуктовую идентичность `APIfy2`.

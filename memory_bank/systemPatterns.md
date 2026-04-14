@@ -14,13 +14,13 @@
 3. Alert fanout pattern
    Failure paths dispatch notifications through configured alert channels.
 4. Dashboard orchestration pattern
-   `app/dashboard/page.tsx` resolves auth state, restores deferred test data, and mounts `Header` plus `MainWorkspace`.
+   `app/dashboard/page.tsx` resolves auth state, restores deferred test data, and mounts `Header` plus `MainWorkspace`, where URL-driven tab state coordinates dedicated testing, monitoring, analytics, favorites, import, and history surfaces.
 
 ## Route and UI Structure
 - `app/page.tsx` immediately redirects to `/dashboard`.
 - `app/login/page.tsx` and `app/signup/page.tsx` are standalone auth screens backed by the Supabase client.
 - `app/test-openapi/page.tsx`, `app/test-ai-analysis/page.tsx`, and `app/test-providers/page.tsx` act as feature demo or diagnostic pages.
-- Supporting feature panels include favorites, history, AI analysis, OpenAPI import, token input, and CORS guidance.
+- Supporting feature panels include favorites, history, OpenAPI import, dedicated monitoring management, request analytics, token input, and CORS guidance.
 
 ## Data and Integration Patterns
 - Supabase helpers are split into client, server, and middleware-specific modules under `lib/supabase/`.

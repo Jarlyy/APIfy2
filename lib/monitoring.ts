@@ -87,6 +87,63 @@ export interface MonitoringRun {
   executed_at: string;
 }
 
+type MonitorInput = {
+  name: string;
+  url: string;
+  method?: string;
+  headers?: Record<string, string> | null;
+  body?: string | null;
+  interval_minutes?: number;
+  expected_status?: number;
+  sla_target?: number;
+  alert_on_failure?: boolean;
+};
+
+type ExistingMonitorSchedule = {
+  interval_minutes: number;
+  next_run_at: string;
+};
+
+function buildMonitorPayload(userId: string, input: MonitorInput) {
+  return {
+    user_id: userId,
+    name: input.name,
+    url: input.url,
+    method: input.method || "GET",
+    headers: input.headers || null,
+    body: input.body || null,
+    interval_minutes: input.interval_minutes || 1440,
+    expected_status: input.expected_status || 200,
+    sla_target: input.sla_target || 99.9,
+    alert_on_failure: input.alert_on_failure ?? true,
+  };
+}
+
+function normalizeMonitorError(error: { code?: string; message: string }) {
+  return error.code === "PGRST205" || /monitor_configs/i.test(error.message)
+    ? "Таблица monitor_configs не найдена в Supabase. Примените актуальный supabase/schema.sql."
+    : error.message;
+}
+
+async function getExistingMonitorSchedule(
+  monitorId: string,
+  userId: string,
+  supabase: ReturnType<typeof createClient>,
+) {
+  const { data, error } = await supabase
+    .from("monitor_configs")
+    .select("interval_minutes, next_run_at")
+    .eq("id", monitorId)
+    .eq("user_id", userId)
+    .single<ExistingMonitorSchedule>();
+
+  if (error) {
+    return { success: false as const, error: normalizeMonitorError(error) };
+  }
+
+  return { success: true as const, data };
+}
+
 export async function getMonitors() {
   const supabase = createClient();
   const {
@@ -104,17 +161,7 @@ export async function getMonitors() {
   return { success: true, data: (data || []) as MonitorConfig[] };
 }
 
-export async function createMonitor(input: {
-  name: string;
-  url: string;
-  method?: string;
-  headers?: Record<string, string> | null;
-  body?: string | null;
-  interval_minutes?: number;
-  expected_status?: number;
-  sla_target?: number;
-  alert_on_failure?: boolean;
-}) {
+export async function createMonitor(input: MonitorInput) {
   const supabase = createClient();
   const {
     data: { user },
@@ -133,18 +180,7 @@ export async function createMonitor(input: {
     };
   }
 
-  const payload = {
-    user_id: user.id,
-    name: input.name,
-    url: input.url,
-    method: input.method || "GET",
-    headers: input.headers || null,
-    body: input.body || null,
-    interval_minutes: input.interval_minutes || 1440,
-    expected_status: input.expected_status || 200,
-    sla_target: input.sla_target || 99.9,
-    alert_on_failure: input.alert_on_failure ?? true,
-  };
+  const payload = buildMonitorPayload(user.id, input);
 
   const { data, error } = await supabase
     .from("monitor_configs")
@@ -153,12 +189,104 @@ export async function createMonitor(input: {
     .single();
 
   if (error) {
-    const message =
-      error.code === "PGRST205" || /monitor_configs/i.test(error.message)
-        ? "Таблица monitor_configs не найдена в Supabase. Примените актуальный supabase/schema.sql."
-        : error.message;
+    return { success: false, error: normalizeMonitorError(error) };
+  }
 
-    return { success: false, error: message };
+  return { success: true, data: data as MonitorConfig };
+}
+
+export async function updateMonitor(monitorId: string, input: MonitorInput) {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: "Пользователь не авторизован" };
+
+  const validationError = validateMonitorUrl(input.url);
+  if (validationError) {
+    return { success: false, error: validationError };
+  }
+
+  if (input.interval_minutes && input.interval_minutes < 1) {
+    return {
+      success: false,
+      error: "Интервал мониторинга должен быть не меньше 1 минуты.",
+    };
+  }
+
+  const existingMonitorResult = await getExistingMonitorSchedule(
+    monitorId,
+    user.id,
+    supabase,
+  );
+
+  if (!existingMonitorResult.success) {
+    return { success: false, error: existingMonitorResult.error };
+  }
+
+  const intervalMinutes = input.interval_minutes || 1440;
+  const payload = {
+    ...buildMonitorPayload(user.id, input),
+    next_run_at:
+      existingMonitorResult.data.interval_minutes !== intervalMinutes
+        ? new Date(Date.now() + intervalMinutes * 60 * 1000).toISOString()
+        : existingMonitorResult.data.next_run_at,
+  };
+
+  const { data, error } = await supabase
+    .from("monitor_configs")
+    .update(payload)
+    .eq("id", monitorId)
+    .eq("user_id", user.id)
+    .select("*")
+    .single();
+
+  if (error) {
+    return { success: false, error: normalizeMonitorError(error) };
+  }
+
+  return { success: true, data: data as MonitorConfig };
+}
+
+export async function setMonitorActiveState(
+  monitorId: string,
+  active: boolean,
+) {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: "Пользователь не авторизован" };
+
+  const existingMonitorResult = await getExistingMonitorSchedule(
+    monitorId,
+    user.id,
+    supabase,
+  );
+
+  if (!existingMonitorResult.success) {
+    return { success: false, error: existingMonitorResult.error };
+  }
+
+  const nextRunAt = active
+    ? new Date(
+        Date.now() + existingMonitorResult.data.interval_minutes * 60 * 1000,
+      ).toISOString()
+    : existingMonitorResult.data.next_run_at;
+
+  const { data, error } = await supabase
+    .from("monitor_configs")
+    .update({
+      active,
+      next_run_at: nextRunAt,
+    })
+    .eq("id", monitorId)
+    .eq("user_id", user.id)
+    .select("*")
+    .single();
+
+  if (error) {
+    return { success: false, error: normalizeMonitorError(error) };
   }
 
   return { success: true, data: data as MonitorConfig };

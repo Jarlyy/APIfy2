@@ -12,6 +12,8 @@ import {
   deleteMonitor,
   getMonitoringRuns,
   getMonitors,
+  setMonitorActiveState,
+  updateMonitor,
 } from "@/lib/monitoring";
 import type { PendingMonitorData } from "@/lib/pending-monitor-data";
 import {
@@ -19,6 +21,7 @@ import {
   CheckCircle,
   Clock,
   Loader2,
+  Pencil,
   PlusCircle,
   Trash2,
 } from "lucide-react";
@@ -40,6 +43,8 @@ interface MonitoringTabProps {
   monitorDraft?: PendingMonitorData | null;
 }
 
+type ChartRangeOption = "6h" | "24h" | "7d" | "30d" | "all";
+
 const DEFAULT_MONITOR_FORM = {
   name: "",
   url: "",
@@ -59,10 +64,107 @@ const DEFAULT_MONITOR_FORM = {
   legalConfirmed: false,
 };
 
+const COMMON_API_KEY_HEADERS = ["x-api-key", "api-key", "apikey"];
+const CHART_RANGE_OPTIONS: Array<{
+  value: ChartRangeOption;
+  label: string;
+  durationMs: number | null;
+}> = [
+  { value: "6h", label: "6ч", durationMs: 6 * 60 * 60 * 1000 },
+  { value: "24h", label: "24ч", durationMs: 24 * 60 * 60 * 1000 },
+  { value: "7d", label: "7д", durationMs: 7 * 24 * 60 * 60 * 1000 },
+  { value: "30d", label: "30д", durationMs: 30 * 24 * 60 * 60 * 1000 },
+  { value: "all", label: "Все", durationMs: null },
+];
+
+function formatMonitorHeaders(headers: MonitorConfig["headers"]) {
+  if (!headers || Object.keys(headers).length === 0) {
+    return "{}";
+  }
+
+  return JSON.stringify(headers, null, 2);
+}
+
+function buildMonitorFormFromConfig(monitor: MonitorConfig) {
+  const rawHeaders = { ...(monitor.headers || {}) };
+  let authType: AuthType = "none";
+  let bearerToken = "";
+  let apiKey = "";
+  let apiKeyHeader = "X-API-Key";
+  let basicUsername = "";
+  let basicPassword = "";
+
+  const authorizationHeader =
+    rawHeaders.Authorization || rawHeaders.authorization;
+  const { Authorization, authorization, ...headersWithoutAuthorization } =
+    rawHeaders;
+  let sanitizedHeaders = headersWithoutAuthorization;
+
+  if (typeof authorizationHeader === "string") {
+    if (authorizationHeader.startsWith("Bearer ")) {
+      authType = "bearer";
+      bearerToken = authorizationHeader.slice("Bearer ".length).trim();
+    } else if (authorizationHeader.startsWith("Basic ")) {
+      authType = "basic";
+
+      try {
+        const decoded = atob(authorizationHeader.slice("Basic ".length).trim());
+        const separatorIndex = decoded.indexOf(":");
+
+        if (separatorIndex >= 0) {
+          basicUsername = decoded.slice(0, separatorIndex);
+          basicPassword = decoded.slice(separatorIndex + 1);
+        }
+      } catch {
+        basicUsername = "";
+        basicPassword = "";
+      }
+    }
+  }
+
+  if (authType === "none") {
+    const apiKeyEntry = Object.entries(sanitizedHeaders).find(([key]) =>
+      COMMON_API_KEY_HEADERS.includes(key.toLowerCase()),
+    );
+
+    if (apiKeyEntry) {
+      authType = "api-key";
+      apiKeyHeader = apiKeyEntry[0];
+      apiKey = apiKeyEntry[1];
+      sanitizedHeaders = Object.fromEntries(
+        Object.entries(sanitizedHeaders).filter(
+          ([key]) => key !== apiKeyEntry[0],
+        ),
+      );
+    }
+  }
+
+  return {
+    ...DEFAULT_MONITOR_FORM,
+    name: monitor.name,
+    url: monitor.url,
+    method: (monitor.method as HttpMethod) || "GET",
+    headers: formatMonitorHeaders(sanitizedHeaders),
+    body: monitor.body || "",
+    authType,
+    bearerToken,
+    apiKey,
+    apiKeyHeader,
+    basicUsername,
+    basicPassword,
+    interval_minutes: monitor.interval_minutes,
+    expected_status: monitor.expected_status,
+    sla_target: Number(monitor.sla_target),
+    alert_on_failure: monitor.alert_on_failure,
+    legalConfirmed: true,
+  };
+}
+
 export default function MonitoringTab({ monitorDraft }: MonitoringTabProps) {
   const [loading, setLoading] = useState(true);
   const [monitorRuns, setMonitorRuns] = useState<MonitoringRun[]>([]);
   const [monitors, setMonitors] = useState<MonitorConfig[]>([]);
+  const [editingMonitorId, setEditingMonitorId] = useState<string | null>(null);
   const [selectedMonitorId, setSelectedMonitorId] = useState<string | null>(
     null,
   );
@@ -70,9 +172,13 @@ export default function MonitoringTab({ monitorDraft }: MonitoringTabProps) {
   const [deletingMonitorId, setDeletingMonitorId] = useState<string | null>(
     null,
   );
+  const [togglingMonitorId, setTogglingMonitorId] = useState<string | null>(
+    null,
+  );
   const [monitorError, setMonitorError] = useState<string | null>(null);
   const [monitorSuccess, setMonitorSuccess] = useState<string | null>(null);
   const [newMonitor, setNewMonitor] = useState(DEFAULT_MONITOR_FORM);
+  const [chartRange, setChartRange] = useState<ChartRangeOption>("24h");
 
   useEffect(() => {
     const load = async () => {
@@ -102,6 +208,7 @@ export default function MonitoringTab({ monitorDraft }: MonitoringTabProps) {
       return;
     }
 
+    setEditingMonitorId(null);
     setNewMonitor((prev) => ({
       ...prev,
       name: monitorDraft.name || prev.name,
@@ -116,6 +223,7 @@ export default function MonitoringTab({ monitorDraft }: MonitoringTabProps) {
       apiKeyHeader: monitorDraft.apiKeyHeader || "X-API-Key",
       basicUsername: monitorDraft.basicUsername || "",
       basicPassword: monitorDraft.basicPassword || "",
+      legalConfirmed: false,
     }));
     setMonitorError(null);
     setMonitorSuccess(
@@ -165,17 +273,45 @@ export default function MonitoringTab({ monitorDraft }: MonitoringTabProps) {
       minute: "2-digit",
     });
 
+    const selectedRange = CHART_RANGE_OPTIONS.find(
+      (option) => option.value === chartRange,
+    );
+    const threshold = selectedRange?.durationMs
+      ? Date.now() - selectedRange.durationMs
+      : null;
+
     return [...selectedMonitorRuns]
+      .filter((run) => {
+        if (!threshold) {
+          return true;
+        }
+
+        return new Date(run.executed_at).getTime() >= threshold;
+      })
       .sort(
         (a, b) =>
           new Date(a.executed_at).getTime() - new Date(b.executed_at).getTime(),
       )
-      .slice(-30)
       .map((run) => ({
         label: formatter.format(new Date(run.executed_at)),
         responseTime: run.response_time_ms,
       }));
-  }, [selectedMonitorRuns]);
+  }, [chartRange, selectedMonitorRuns]);
+
+  const isEditing = editingMonitorId !== null;
+
+  const resetMonitorForm = () => {
+    setEditingMonitorId(null);
+    setNewMonitor({ ...DEFAULT_MONITOR_FORM });
+  };
+
+  const handleEditMonitor = (monitor: MonitorConfig) => {
+    setEditingMonitorId(monitor.id);
+    setSelectedMonitorId(monitor.id);
+    setMonitorError(null);
+    setMonitorSuccess(null);
+    setNewMonitor(buildMonitorFormFromConfig(monitor));
+  };
 
   const buildMonitorHeaders = () => {
     const parsedHeaders = newMonitor.headers.trim()
@@ -209,7 +345,7 @@ export default function MonitoringTab({ monitorDraft }: MonitoringTabProps) {
     return normalizedHeaders;
   };
 
-  const handleCreateMonitor = async () => {
+  const handleSubmitMonitor = async () => {
     if (!newMonitor.name.trim() || !newMonitor.url.trim()) {
       return;
     }
@@ -239,7 +375,7 @@ export default function MonitoringTab({ monitorDraft }: MonitoringTabProps) {
       return;
     }
 
-    const result = await createMonitor({
+    const monitorInput = {
       name: newMonitor.name.trim(),
       url: newMonitor.url.trim(),
       method: newMonitor.method,
@@ -252,15 +388,34 @@ export default function MonitoringTab({ monitorDraft }: MonitoringTabProps) {
       expected_status: newMonitor.expected_status,
       sla_target: newMonitor.sla_target,
       alert_on_failure: newMonitor.alert_on_failure,
-    });
+    };
+
+    const result = editingMonitorId
+      ? await updateMonitor(editingMonitorId, monitorInput)
+      : await createMonitor(monitorInput);
 
     if (result.success && result.data) {
-      setMonitors((prev) => [result.data, ...prev]);
+      setMonitors((prev) =>
+        editingMonitorId
+          ? prev.map((monitor) =>
+              monitor.id === result.data.id ? result.data : monitor,
+            )
+          : [result.data, ...prev],
+      );
       setSelectedMonitorId(result.data.id);
-      setNewMonitor(DEFAULT_MONITOR_FORM);
-      setMonitorSuccess("Монитор успешно создан.");
+      resetMonitorForm();
+      setMonitorSuccess(
+        editingMonitorId
+          ? "Параметры монитора обновлены."
+          : "Монитор успешно создан.",
+      );
     } else {
-      setMonitorError(result.error || "Не удалось создать монитор.");
+      setMonitorError(
+        result.error ||
+          (editingMonitorId
+            ? "Не удалось обновить монитор."
+            : "Не удалось создать монитор."),
+      );
     }
 
     setCreatingMonitor(false);
@@ -289,8 +444,54 @@ export default function MonitoringTab({ monitorDraft }: MonitoringTabProps) {
       setSelectedMonitorId(nextMonitors[0]?.id ?? null);
     }
 
+    if (editingMonitorId === monitorId) {
+      resetMonitorForm();
+    }
+
     setMonitorSuccess("Монитор удалён.");
     setDeletingMonitorId(null);
+  };
+
+  const handleToggleMonitorActive = async (monitor: MonitorConfig) => {
+    if (togglingMonitorId === monitor.id) {
+      return;
+    }
+
+    setMonitorError(null);
+    setTogglingMonitorId(monitor.id);
+
+    const nextActive = !monitor.active;
+
+    setMonitors((prev) =>
+      prev.map((item) =>
+        item.id === monitor.id ? { ...item, active: nextActive } : item,
+      ),
+    );
+
+    const result = await setMonitorActiveState(monitor.id, nextActive);
+
+    if (!result.success || !result.data) {
+      setMonitors((prev) =>
+        prev.map((item) =>
+          item.id === monitor.id ? { ...item, active: monitor.active } : item,
+        ),
+      );
+      setMonitorError(
+        result.error || "Не удалось изменить состояние монитора.",
+      );
+      setTogglingMonitorId(null);
+      return;
+    }
+
+    setMonitors((prev) =>
+      prev.map((item) => (item.id === result.data.id ? result.data : item)),
+    );
+
+    if (selectedMonitorId === result.data.id) {
+      setSelectedMonitorId(result.data.id);
+    }
+
+    setTogglingMonitorId(null);
   };
 
   if (loading) {
@@ -306,7 +507,9 @@ export default function MonitoringTab({ monitorDraft }: MonitoringTabProps) {
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Мониторинг</CardTitle>
+          <CardTitle>
+            {isEditing ? "Редактирование монитора" : "Мониторинг"}
+          </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid gap-4">
@@ -596,18 +799,41 @@ export default function MonitoringTab({ monitorDraft }: MonitoringTabProps) {
             </label>
 
             <div className="flex justify-end">
-              <Button
-                onClick={handleCreateMonitor}
-                disabled={
-                  creatingMonitor ||
-                  !newMonitor.name.trim() ||
-                  !newMonitor.url.trim() ||
-                  !newMonitor.legalConfirmed
-                }
-              >
-                <PlusCircle className="mr-2 h-4 w-4" />
-                {creatingMonitor ? "Создание..." : "Добавить монитор"}
-              </Button>
+              <div className="flex flex-wrap justify-end gap-2">
+                {isEditing && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={resetMonitorForm}
+                    disabled={creatingMonitor}
+                  >
+                    Отменить редактирование
+                  </Button>
+                )}
+                <Button
+                  onClick={handleSubmitMonitor}
+                  disabled={
+                    creatingMonitor ||
+                    !newMonitor.name.trim() ||
+                    !newMonitor.url.trim() ||
+                    !newMonitor.legalConfirmed
+                  }
+                >
+                  {isEditing ? (
+                    <>
+                      <Pencil className="mr-2 h-4 w-4" />
+                      {creatingMonitor
+                        ? "Сохранение..."
+                        : "Сохранить изменения"}
+                    </>
+                  ) : (
+                    <>
+                      <PlusCircle className="mr-2 h-4 w-4" />
+                      {creatingMonitor ? "Создание..." : "Добавить монитор"}
+                    </>
+                  )}
+                </Button>
+              </div>
             </div>
           </div>
 
@@ -655,9 +881,49 @@ export default function MonitoringTab({ monitorDraft }: MonitoringTabProps) {
                     </button>
 
                     <div className="flex items-center gap-2">
-                      <Badge variant={monitor.active ? "default" : "secondary"}>
-                        {monitor.active ? "Активен" : "Пауза"}
-                      </Badge>
+                      <button
+                        type="button"
+                        onClick={() => handleToggleMonitorActive(monitor)}
+                        title={
+                          monitor.active
+                            ? "Поставить монитор на паузу"
+                            : "Возобновить монитор"
+                        }
+                        aria-pressed={monitor.active}
+                        className="flex items-center gap-2 rounded-full px-1 py-1 transition-colors hover:bg-muted/70"
+                      >
+                        <span
+                          className={`relative inline-flex h-6 w-11 items-center rounded-full border transition-[background-color,border-color,box-shadow] duration-200 ease-out ${
+                            monitor.active
+                              ? "border-emerald-500 bg-emerald-500/90 shadow-[0_0_0_1px_rgba(16,185,129,0.12)] dark:border-emerald-400 dark:bg-emerald-500"
+                              : "border-zinc-300 bg-zinc-200 dark:border-zinc-600 dark:bg-zinc-700"
+                          }`}
+                        >
+                          <span
+                            className={`inline-block h-4 w-4 rounded-full bg-white shadow-sm transition-[transform,box-shadow] duration-200 ease-out ${
+                              monitor.active ? "translate-x-6" : "translate-x-1"
+                            }`}
+                          />
+                        </span>
+                        <span
+                          className={`inline-block min-w-[4.75rem] text-left text-xs font-medium transition-colors ${
+                            monitor.active
+                              ? "text-emerald-700 dark:text-emerald-300"
+                              : "text-zinc-500 dark:text-zinc-400"
+                          }`}
+                        >
+                          {monitor.active ? "Активен" : "Пауза"}
+                        </span>
+                      </button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7"
+                        onClick={() => handleEditMonitor(monitor)}
+                        title="Редактировать монитор"
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
                       <Button
                         variant="ghost"
                         size="icon"
@@ -711,6 +977,9 @@ export default function MonitoringTab({ monitorDraft }: MonitoringTabProps) {
             <div className="mt-2 flex flex-wrap gap-2">
               <Badge variant="outline">{selectedMonitor.method}</Badge>
               <Badge variant="outline">
+                {selectedMonitor.active ? "Активен" : "На паузе"}
+              </Badge>
+              <Badge variant="outline">
                 Статус: {selectedMonitor.expected_status}
               </Badge>
               <Badge variant="outline">
@@ -721,9 +990,30 @@ export default function MonitoringTab({ monitorDraft }: MonitoringTabProps) {
 
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-base">
-                Отклик сервера по последним запускам
-              </CardTitle>
+              <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                <CardTitle className="text-base">
+                  Отклик сервера по последним запускам
+                </CardTitle>
+
+                <div className="flex flex-wrap gap-2">
+                  {CHART_RANGE_OPTIONS.map((option) => {
+                    const isActive = chartRange === option.value;
+
+                    return (
+                      <Button
+                        key={option.value}
+                        type="button"
+                        variant={isActive ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setChartRange(option.value)}
+                        className="h-8 px-3"
+                      >
+                        {option.label}
+                      </Button>
+                    );
+                  })}
+                </div>
+              </div>
             </CardHeader>
             <CardContent className="h-64">
               {selectedMonitorResponseTrend.some(

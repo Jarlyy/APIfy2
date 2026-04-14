@@ -29,5 +29,5 @@ Teams integrating external APIs need a faster way to send requests, validate aut
 - Safer parameterized test execution via placeholder inputs.
 
 ## Current Documentation Gaps
-- `docs/README.md` does not exist yet, even though `AGENTS.md` declares it as the architecture source of truth.
-- The repo contains active product evolution in the working tree, so deliverable status is based on code-visible capabilities rather than outdated doc claims.
+- `docs/README.md` now exists as the architecture source of truth, but it must be kept in sync when dashboard information architecture changes.
+- The canonical project plan lives in `memory_bank/projectbrief.md` deliverables; `docs/development-plan.md` is a supporting plan and can drift if not updated alongside code changes.

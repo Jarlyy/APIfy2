@@ -4,6 +4,13 @@
 - Memory Bank structure is synchronized with the root `AGENTS.md` requirements.
 - The mandatory root files exist and now reflect the latest upstream monitoring work plus the current local working tree.
 - `memory_bank/ui_extension/` has been added to document public pages and key UI components.
+- `docs/README.md` and `docs/development-plan.md` are synchronized with the current dashboard tab split, deliverable states, and active Biome-based lint tooling.
+- The development plan now explicitly tracks two next monitoring-chart UX tasks: adaptive X-axis labels and a per-monitor default chart range.
+- Saved scheduled monitors can now be edited after creation through the existing monitoring form, without deleting and recreating the monitor.
+- Saved scheduled monitors can now also be paused and resumed directly from the monitor list without deletion.
+- Monitor active state is now controlled inline through a switch-like status control instead of a separate pause/play button, and the action no longer triggers a green success message.
+- Monitor active-state toggles now update optimistically in the UI, so the switch responds immediately while the backend request completes.
+- The selected monitor chart now lets the user change the visible X-axis time range (`6h`, `24h`, `7d`, `30d`, `all`) directly in the monitoring tab.
 - Dashboard navigation now splits monitoring into its own tab, and request-history analytics lives in a separate dedicated tab.
 - Legal/security hardening for scheduled monitoring is now evaluated as complete against the current plan scope.
 - The legacy combined `components/AnalyticsTab.tsx` component has been removed after the dashboard tab split.
@@ -27,6 +34,15 @@
 - `biome.json` contains targeted rule relaxations for legacy patterns (`forEach`, non-null assertions, some a11y checks) so that the codebase can pass lint without an immediate large refactor.
 
 ## Changelog
+- 2026-04-14: Added the requested monitoring-chart follow-ups to planning documents: adaptive X-axis label formatting by range and a per-monitor default chart range.
+- 2026-04-14: Added a selectable time range control to the response-time chart in `components/MonitoringTab.tsx`, so users can change the X-axis window instead of being limited to a fixed recent slice.
+- 2026-04-14: Switched the monitor status toggle in `components/MonitoringTab.tsx` to optimistic UI updates and refined the switch animation so pause/resume feels immediate instead of waiting for the backend round-trip.
+- 2026-04-14: Stabilized the monitor status switch label width in `components/MonitoringTab.tsx` and removed disabled visual treatment during toggle requests so the control no longer shifts or shows a forbidden cursor.
+- 2026-04-14: Reworked the monitor active-state control in `components/MonitoringTab.tsx` into an inline switch-like status toggle and removed success-banner feedback for pause/resume clicks.
+- 2026-04-14: Added pause/resume controls for saved monitors in `components/MonitoringTab.tsx`, backed by `lib/monitoring.ts:setMonitorActiveState`, with `next_run_at` recalculated when a paused monitor is resumed.
+- 2026-04-14: Added in-place editing for saved monitor configs in `components/MonitoringTab.tsx`, including form rehydration for stored auth settings and `next_run_at` recalculation when the interval changes.
+- 2026-04-14: Synchronized `docs/README.md` with the current dashboard architecture, replacing outdated combined analytics references with dedicated monitoring/request-analytics documentation and current Biome tooling notes.
+- 2026-04-14: Updated `docs/development-plan.md` to mark legal/security monitoring hardening as completed and advanced Memory Bank change control to current `HEAD`.
 - 2026-04-10: Added explicit empty states in `MonitoringTab.tsx` and `RequestAnalyticsTab.tsx` so the split dashboard tabs stay understandable before data exists or when filters return nothing.
 - 2026-04-10: Cleaned up garbled user-facing text in `Header.tsx`, `MonitoringTab.tsx`, and `RequestAnalyticsTab.tsx` so the separated dashboard tabs render consistent UTF-8 Russian copy.
 - 2026-04-10: Removed the unused legacy `components/AnalyticsTab.tsx` component and its obsolete Memory Bank note after splitting monitoring and request analytics into separate tabs.
@@ -60,5 +76,5 @@
 - 2026-03-12: Supabase schema was made idempotent for reruns and Memory Bank was previously re-synced.
 
 ## Change Control
-- last_checked_commit: `37eabdc`
-- checked_on: `2026-04-10`
+- last_checked_commit: `d970248`
+- checked_on: `2026-04-14`

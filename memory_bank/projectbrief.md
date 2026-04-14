@@ -49,5 +49,9 @@ APIfy2 is a Next.js application for API exploration, manual request execution, O
 | DEL-009 | Миграция мониторинга на альтернативный cron-сервис | pending | 2 |
 | DEL-010 | Legal/security guardrails для расписного мониторинга | completed | 2 |
 
+## Planned Follow-Ups For DEL-006
+- Monitoring chart: adapt X-axis label formatting to the selected range.
+- Monitoring chart: persist a per-monitor default chart range so each monitor can reopen with its preferred time window.
+
 ## Project Completion
 Project completion based on completed deliverables: 92%.
