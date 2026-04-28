@@ -14,7 +14,9 @@
 3. Alert fanout pattern
    Failure paths dispatch notifications through configured alert channels.
 4. Dashboard orchestration pattern
-   `app/dashboard/page.tsx` resolves auth state, restores deferred test data, and mounts `Header` plus `MainWorkspace`, where URL-driven tab state coordinates dedicated testing, monitoring, analytics, favorites, import, and history surfaces.
+   `proxy.ts` delegates session handling to `lib/supabase/middleware.ts`, while `app/dashboard/page.tsx` resolves client auth state, restores deferred test data, and mounts `Header` plus `MainWorkspace`, where URL-driven tab state coordinates dedicated testing, monitoring, analytics, favorites, import, and history surfaces.
+5. Local proxy safety pattern
+   `/api/proxy` validates target protocol, host, port, and body size before forwarding requests, blocking localhost/private/internal targets to reduce SSRF and abuse risk.
 
 ## Route and UI Structure
 - `app/page.tsx` immediately redirects to `/dashboard`.
@@ -26,6 +28,7 @@
 - Supabase helpers are split into client, server, and middleware-specific modules under `lib/supabase/`.
 - User-oriented data such as favorites, history, monitor configs, monitor runs, and alert channels are stored under RLS-protected tables.
 - Proxy logic exists both as a server route and a root `proxy.ts` integration point.
+- AI route logging avoids request/response payload dumps in the main analysis route and records only operational metadata such as action names.
 
 ## Noted Uncertainties
 - Legal policy drafts were added under `docs/legal`, but they still require counsel review before external publication.

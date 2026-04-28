@@ -1,8 +1,8 @@
 import { type NextRequest, NextResponse } from "next/server";
+import { updateSession } from "./lib/supabase/middleware";
 
 export async function proxy(request: NextRequest) {
-  // Убираем проверку аутентификации - разрешаем доступ ко всем страницам
-  return NextResponse.next();
+  return updateSession(request);
 }
 
 export const config = {

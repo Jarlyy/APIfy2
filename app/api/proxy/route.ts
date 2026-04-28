@@ -1,5 +1,37 @@
 import { type NextRequest, NextResponse } from "next/server";
 
+const ALLOWED_PROTOCOLS = new Set(["http:", "https:"]);
+const BLOCKED_PORTS = new Set([
+  "0",
+  "21",
+  "22",
+  "23",
+  "25",
+  "53",
+  "110",
+  "135",
+  "139",
+  "143",
+  "389",
+  "445",
+  "465",
+  "587",
+  "993",
+  "995",
+  "1433",
+  "1521",
+  "3306",
+  "3389",
+  "5432",
+  "6379",
+  "9200",
+  "9300",
+  "11211",
+  "27017",
+]);
+const BLOCKED_HOSTNAMES = new Set(["localhost", "metadata.google.internal"]);
+const MAX_PROXY_BODY_BYTES = 1_000_000;
+
 export async function GET(request: NextRequest) {
   return handleProxyRequest(request, "GET");
 }
@@ -22,7 +54,6 @@ export async function PATCH(request: NextRequest) {
 
 async function handleProxyRequest(request: NextRequest, method: string) {
   try {
-    // Получаем целевой URL из параметров
     const targetUrl = request.nextUrl.searchParams.get("url");
 
     if (!targetUrl) {
@@ -32,7 +63,6 @@ async function handleProxyRequest(request: NextRequest, method: string) {
       );
     }
 
-    // Проверяем валидность URL
     let url: URL;
     try {
       url = new URL(targetUrl);
@@ -40,44 +70,47 @@ async function handleProxyRequest(request: NextRequest, method: string) {
       return NextResponse.json({ error: "Невалидный URL" }, { status: 400 });
     }
 
-    // Получаем заголовки из запроса
+    const safetyError = validateProxyTarget(url);
+    if (safetyError) {
+      return NextResponse.json({ error: safetyError }, { status: 400 });
+    }
+
     const headers: Record<string, string> = {};
     request.headers.forEach((value, key) => {
-      // Пропускаем служебные заголовки и заголовки сжатия
       if (
         !key.startsWith("x-") &&
         key !== "host" &&
         key !== "connection" &&
         key !== "content-length" &&
-        key !== "accept-encoding"
+        key !== "accept-encoding" &&
+        key !== "cookie"
       ) {
-        // Убираем accept-encoding чтобы избежать сжатия
         headers[key] = value;
       }
     });
 
-    // Принудительно отключаем сжатие
     headers["accept-encoding"] = "identity";
-
-    // Добавляем User-Agent для лучшей совместимости
     headers["user-agent"] = "APIfy-Proxy/1.0";
 
-    // Получаем тело запроса если есть
     let body: string | undefined;
     if (method !== "GET" && method !== "DELETE") {
       try {
         body = await request.text();
+        if (new TextEncoder().encode(body).byteLength > MAX_PROXY_BODY_BYTES) {
+          return NextResponse.json(
+            { error: "Тело запроса превышает лимит локального прокси" },
+            { status: 413 },
+          );
+        }
       } catch {
         body = undefined;
       }
     }
 
-    // Создаем контроллер для таймаута (8 секунд для Vercel)
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 8000);
 
     try {
-      // Выполняем запрос к целевому API
       const response = await fetch(targetUrl, {
         method,
         headers,
@@ -87,23 +120,19 @@ async function handleProxyRequest(request: NextRequest, method: string) {
 
       clearTimeout(timeoutId);
 
-      // Получаем данные ответа
       const contentType = response.headers.get("content-type");
       let data;
 
       try {
         if (contentType?.includes("application/json")) {
-          // Пытаемся парсить как JSON
           const text = await response.text();
           try {
             data = JSON.parse(text);
           } catch (jsonError) {
-            // Если не удалось парсить JSON, возвращаем как текст
             console.warn("Failed to parse JSON, returning as text:", jsonError);
             data = text;
           }
         } else {
-          // Для не-JSON контента возвращаем как текст
           data = await response.text();
         }
       } catch (readError) {
@@ -111,7 +140,6 @@ async function handleProxyRequest(request: NextRequest, method: string) {
         data = `Error reading response: ${readError}`;
       }
 
-      // Возвращаем ответ с CORS заголовками
       return NextResponse.json(
         {
           status: response.status,
@@ -167,7 +195,6 @@ async function handleProxyRequest(request: NextRequest, method: string) {
   }
 }
 
-// Обработка OPTIONS запросов для CORS preflight
 export async function OPTIONS() {
   return new NextResponse(null, {
     status: 200,
@@ -177,4 +204,62 @@ export async function OPTIONS() {
       "Access-Control-Allow-Headers": "*",
     },
   });
+}
+
+function validateProxyTarget(url: URL) {
+  if (!ALLOWED_PROTOCOLS.has(url.protocol)) {
+    return "Локальный прокси поддерживает только HTTP/HTTPS URL";
+  }
+
+  const hostname = url.hostname.toLowerCase();
+  if (BLOCKED_HOSTNAMES.has(hostname) || hostname.endsWith(".localhost")) {
+    return "Локальный прокси не работает с локальными адресами";
+  }
+
+  if (hostname.endsWith(".local") || hostname.endsWith(".internal")) {
+    return "Локальный прокси не работает с внутренними доменами";
+  }
+
+  if (isPrivateIp(hostname)) {
+    return "Локальный прокси не работает с приватными IP-адресами";
+  }
+
+  if (url.port && BLOCKED_PORTS.has(url.port)) {
+    return "Указанный порт запрещен для локального прокси";
+  }
+
+  return null;
+}
+
+function isPrivateIp(hostname: string) {
+  if (hostname === "0.0.0.0") {
+    return true;
+  }
+
+  if (/^\d{1,3}(\.\d{1,3}){3}$/.test(hostname)) {
+    const parts = hostname.split(".").map(Number);
+    const [first, second] = parts;
+
+    if (parts.some((part) => part < 0 || part > 255)) {
+      return true;
+    }
+
+    return (
+      first === 10 ||
+      first === 127 ||
+      (first === 169 && second === 254) ||
+      (first === 172 && second >= 16 && second <= 31) ||
+      (first === 192 && second === 168)
+    );
+  }
+
+  if (
+    hostname === "::1" ||
+    hostname.startsWith("fc") ||
+    hostname.startsWith("fd")
+  ) {
+    return true;
+  }
+
+  return false;
 }

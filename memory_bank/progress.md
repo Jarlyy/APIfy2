@@ -11,6 +11,9 @@
 - Monitor active state is now controlled inline through a switch-like status control instead of a separate pause/play button, and the action no longer triggers a green success message.
 - Monitor active-state toggles now update optimistically in the UI, so the switch responds immediately while the backend request completes.
 - The selected monitor chart now lets the user change the visible X-axis time range (`6h`, `24h`, `7d`, `30d`, `all`) directly in the monitoring tab.
+- Dense monitoring charts now stay readable by compacting long run histories into averaged segments, thinning X-axis ticks, hiding dots when crowded, and showing clearer aggregate tooltips.
+- Monitoring chart tooltip styling now follows light/dark theme variables so hover details remain readable in both themes.
+- The previously identified security/product polish risks are addressed: app metadata now reflects APIfy2, middleware auth guard is active through `proxy.ts`, local CORS proxy blocks risky targets, and the main AI analysis route no longer logs request/response payloads.
 - Dashboard navigation now splits monitoring into its own tab, and request-history analytics lives in a separate dedicated tab.
 - Legal/security hardening for scheduled monitoring is now evaluated as complete against the current plan scope.
 - The legacy combined `components/AnalyticsTab.tsx` component has been removed after the dashboard tab split.
@@ -34,6 +37,10 @@
 - `biome.json` contains targeted rule relaxations for legacy patterns (`forEach`, non-null assertions, some a11y checks) so that the codebase can pass lint without an immediate large refactor.
 
 ## Changelog
+- 2026-04-28: Fixed `components/MonitoringTab.tsx` chart tooltip colors by applying theme-aware popover background, border, label, and item styles.
+- 2026-04-28: Improved `components/MonitoringTab.tsx` response-time chart readability for large point counts with adaptive labels, point compaction, reduced visual clutter, and aggregate-aware tooltips.
+- 2026-04-28: Fixed the identified risks by updating `app/layout.tsx` metadata, restoring Supabase middleware auth guard via `proxy.ts`, adding SSRF/abuse guardrails to `/api/proxy`, deferring browser Supabase client creation in auth pages to submit handlers, and removing sensitive payload logs from `/api/ai/analyze`.
+- 2026-04-28: Performed a project analysis pass against `AGENTS.md`, Memory Bank, `docs/README.md`, key App Router/API/component/lib files, and confirmed current `HEAD` is `c0ebcda` with project progress still tracked at 92%.
 - 2026-04-14: Added the requested monitoring-chart follow-ups to planning documents: adaptive X-axis label formatting by range and a per-monitor default chart range.
 - 2026-04-14: Added a selectable time range control to the response-time chart in `components/MonitoringTab.tsx`, so users can change the X-axis window instead of being limited to a fixed recent slice.
 - 2026-04-14: Switched the monitor status toggle in `components/MonitoringTab.tsx` to optimistic UI updates and refined the switch animation so pause/resume feels immediate instead of waiting for the backend round-trip.
@@ -76,5 +83,5 @@
 - 2026-03-12: Supabase schema was made idempotent for reruns and Memory Bank was previously re-synced.
 
 ## Change Control
-- last_checked_commit: `d970248`
-- checked_on: `2026-04-14`
+- last_checked_commit: `c0ebcda`
+- checked_on: `2026-04-28`

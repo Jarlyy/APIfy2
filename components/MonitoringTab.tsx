@@ -44,6 +44,13 @@ interface MonitoringTabProps {
 }
 
 type ChartRangeOption = "6h" | "24h" | "7d" | "30d" | "all";
+type ResponseTrendPoint = {
+  label: string;
+  tooltipLabel: string;
+  responseTime: number | null;
+  runCount: number;
+  isAggregated: boolean;
+};
 
 const DEFAULT_MONITOR_FORM = {
   name: "",
@@ -76,6 +83,103 @@ const CHART_RANGE_OPTIONS: Array<{
   { value: "30d", label: "30д", durationMs: 30 * 24 * 60 * 60 * 1000 },
   { value: "all", label: "Все", durationMs: null },
 ];
+const MAX_VISIBLE_CHART_POINTS = 80;
+const MAX_DOTS_BEFORE_HIDE = 35;
+
+function formatChartTimestamp(date: Date, chartRange: ChartRangeOption) {
+  const options: Intl.DateTimeFormatOptions =
+    chartRange === "6h" || chartRange === "24h"
+      ? { hour: "2-digit", minute: "2-digit" }
+      : { day: "2-digit", month: "2-digit", hour: "2-digit" };
+
+  return new Intl.DateTimeFormat("ru-RU", options).format(date);
+}
+
+function formatTooltipTimestamp(date: Date) {
+  return new Intl.DateTimeFormat("ru-RU", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(date);
+}
+
+function buildTrendPoint(
+  runs: MonitoringRun[],
+  chartRange: ChartRangeOption,
+): ResponseTrendPoint {
+  const datedRuns = runs.map((run) => ({
+    ...run,
+    executedAtMs: new Date(run.executed_at).getTime(),
+  }));
+  const firstRun = datedRuns[0];
+  const lastRun = datedRuns[datedRuns.length - 1];
+  const numericResponseTimes = datedRuns
+    .map((run) => run.response_time_ms)
+    .filter((value): value is number => typeof value === "number");
+  const responseTime = numericResponseTimes.length
+    ? Math.round(
+        numericResponseTimes.reduce((sum, value) => sum + value, 0) /
+          numericResponseTimes.length,
+      )
+    : null;
+
+  if (!firstRun || !lastRun) {
+    return {
+      label: "Нет данных",
+      tooltipLabel: "Нет данных",
+      responseTime,
+      runCount: 0,
+      isAggregated: false,
+    };
+  }
+
+  const firstDate = new Date(firstRun.executedAtMs);
+  const lastDate = new Date(lastRun.executedAtMs);
+  const isAggregated = runs.length > 1;
+
+  return {
+    label: isAggregated
+      ? `${formatChartTimestamp(firstDate, chartRange)}-${formatChartTimestamp(
+          lastDate,
+          chartRange,
+        )}`
+      : formatChartTimestamp(firstDate, chartRange),
+    tooltipLabel: isAggregated
+      ? `${formatTooltipTimestamp(firstDate)} - ${formatTooltipTimestamp(lastDate)}`
+      : formatTooltipTimestamp(firstDate),
+    responseTime,
+    runCount: runs.length,
+    isAggregated,
+  };
+}
+
+function compactTrendPoints(
+  runs: MonitoringRun[],
+  chartRange: ChartRangeOption,
+) {
+  if (runs.length <= MAX_VISIBLE_CHART_POINTS) {
+    return {
+      points: runs.map((run) => buildTrendPoint([run], chartRange)),
+      isCompacted: false,
+      sourceCount: runs.length,
+    };
+  }
+
+  const bucketSize = Math.ceil(runs.length / MAX_VISIBLE_CHART_POINTS);
+  const buckets: MonitoringRun[][] = [];
+
+  for (let index = 0; index < runs.length; index += bucketSize) {
+    buckets.push(runs.slice(index, index + bucketSize));
+  }
+
+  return {
+    points: buckets.map((bucket) => buildTrendPoint(bucket, chartRange)),
+    isCompacted: true,
+    sourceCount: runs.length,
+  };
+}
 
 function formatMonitorHeaders(headers: MonitorConfig["headers"]) {
   if (!headers || Object.keys(headers).length === 0) {
@@ -266,13 +370,6 @@ export default function MonitoringTab({ monitorDraft }: MonitoringTabProps) {
   }, [selectedMonitorRuns, monitors]);
 
   const selectedMonitorResponseTrend = useMemo(() => {
-    const formatter = new Intl.DateTimeFormat("ru-RU", {
-      day: "2-digit",
-      month: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-
     const selectedRange = CHART_RANGE_OPTIONS.find(
       (option) => option.value === chartRange,
     );
@@ -280,7 +377,7 @@ export default function MonitoringTab({ monitorDraft }: MonitoringTabProps) {
       ? Date.now() - selectedRange.durationMs
       : null;
 
-    return [...selectedMonitorRuns]
+    const filteredRuns = [...selectedMonitorRuns]
       .filter((run) => {
         if (!threshold) {
           return true;
@@ -291,12 +388,20 @@ export default function MonitoringTab({ monitorDraft }: MonitoringTabProps) {
       .sort(
         (a, b) =>
           new Date(a.executed_at).getTime() - new Date(b.executed_at).getTime(),
-      )
-      .map((run) => ({
-        label: formatter.format(new Date(run.executed_at)),
-        responseTime: run.response_time_ms,
-      }));
+      );
+
+    return compactTrendPoints(filteredRuns, chartRange);
   }, [chartRange, selectedMonitorRuns]);
+
+  const hasResponseTrendData = selectedMonitorResponseTrend.points.some(
+    (point) => typeof point.responseTime === "number",
+  );
+  const shouldShowChartDots =
+    selectedMonitorResponseTrend.points.length <= MAX_DOTS_BEFORE_HIDE;
+  const chartTickInterval = Math.max(
+    Math.ceil(selectedMonitorResponseTrend.points.length / 8) - 1,
+    0,
+  );
 
   const isEditing = editingMonitorId !== null;
 
@@ -1016,40 +1121,123 @@ export default function MonitoringTab({ monitorDraft }: MonitoringTabProps) {
               </div>
             </CardHeader>
             <CardContent className="h-64">
-              {selectedMonitorResponseTrend.some(
-                (point) => typeof point.responseTime === "number",
-              ) ? (
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={selectedMonitorResponseTrend}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis
-                      dataKey="label"
-                      minTickGap={24}
-                      tick={{ fontSize: 12 }}
-                    />
-                    <YAxis
-                      tickFormatter={(value) => `${value} ms`}
-                      width={70}
-                    />
-                    <Tooltip
-                      formatter={(value) =>
-                        typeof value === "number"
-                          ? [`${value} ms`, "Отклик"]
-                          : ["Нет данных", "Отклик"]
-                      }
-                      labelFormatter={(label) => `Запуск: ${label}`}
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="responseTime"
-                      stroke="#3b82f6"
-                      strokeWidth={2}
-                      dot={{ r: 3 }}
-                      activeDot={{ r: 5 }}
-                      connectNulls={false}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
+              {hasResponseTrendData ? (
+                <div className="flex h-full flex-col gap-2">
+                  {selectedMonitorResponseTrend.isCompacted && (
+                    <p className="text-xs text-muted-foreground">
+                      Показано {selectedMonitorResponseTrend.points.length}{" "}
+                      усредненных отрезков из{" "}
+                      {selectedMonitorResponseTrend.sourceCount} запусков, чтобы
+                      график не сливался.
+                    </p>
+                  )}
+                  <div className="min-h-0 flex-1">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart
+                        data={selectedMonitorResponseTrend.points}
+                        margin={{ top: 8, right: 16, bottom: 8, left: 0 }}
+                      >
+                        <defs>
+                          <linearGradient
+                            id="responseTimeStroke"
+                            x1="0"
+                            x2="1"
+                            y1="0"
+                            y2="0"
+                          >
+                            <stop offset="0%" stopColor="#0ea5e9" />
+                            <stop offset="100%" stopColor="#2563eb" />
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid
+                          stroke="currentColor"
+                          strokeDasharray="4 8"
+                          strokeOpacity={0.14}
+                          vertical={false}
+                        />
+                        <XAxis
+                          dataKey="label"
+                          interval={chartTickInterval}
+                          minTickGap={36}
+                          tick={{ fontSize: 11 }}
+                          tickLine={false}
+                          axisLine={false}
+                        />
+                        <YAxis
+                          tickFormatter={(value) => `${value} ms`}
+                          width={70}
+                          tick={{ fontSize: 11 }}
+                          tickLine={false}
+                          axisLine={false}
+                        />
+                        <Tooltip
+                          contentStyle={{
+                            backgroundColor: "hsl(var(--popover))",
+                            borderRadius: 12,
+                            border: "1px solid hsl(var(--border))",
+                            boxShadow: "0 18px 40px rgba(15, 23, 42, 0.2)",
+                            color: "hsl(var(--popover-foreground))",
+                          }}
+                          itemStyle={{
+                            color: "hsl(var(--popover-foreground))",
+                          }}
+                          labelStyle={{
+                            color: "hsl(var(--popover-foreground))",
+                            fontWeight: 600,
+                            marginBottom: 4,
+                          }}
+                          formatter={(value, _name, item) => {
+                            const payload = item.payload as
+                              | ResponseTrendPoint
+                              | undefined;
+
+                            if (typeof value !== "number") {
+                              return ["Нет данных", "Отклик"];
+                            }
+
+                            return [
+                              payload?.isAggregated
+                                ? `${value} ms в среднем`
+                                : `${value} ms`,
+                              payload?.isAggregated
+                                ? `Отклик (${payload.runCount} запусков)`
+                                : "Отклик",
+                            ];
+                          }}
+                          labelFormatter={(_label, payload) => {
+                            const point = payload[0]?.payload as
+                              | ResponseTrendPoint
+                              | undefined;
+
+                            return point?.isAggregated
+                              ? `Период: ${point.tooltipLabel}`
+                              : `Запуск: ${point?.tooltipLabel ?? "нет данных"}`;
+                          }}
+                        />
+                        <Line
+                          type="monotone"
+                          dataKey="responseTime"
+                          stroke="url(#responseTimeStroke)"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={3}
+                          dot={
+                            shouldShowChartDots
+                              ? {
+                                  r: 3,
+                                  fill: "#ffffff",
+                                  stroke: "#2563eb",
+                                  strokeWidth: 2,
+                                }
+                              : false
+                          }
+                          activeDot={{ r: 6, strokeWidth: 2 }}
+                          connectNulls={false}
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
               ) : (
                 <p className="text-sm text-muted-foreground">
                   Пока нет замеров времени отклика для выбранного монитора.

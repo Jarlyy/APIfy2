@@ -2,11 +2,8 @@ import { GeminiAPI } from "@/lib/gemini-api";
 import { type NextRequest, NextResponse } from "next/server";
 
 export async function POST(request: NextRequest) {
-  console.log("AI API вызван");
-
   try {
     const body = await request.json();
-    console.log("Получен запрос:", body);
 
     const { action, data } = body;
 
@@ -94,7 +91,7 @@ export async function POST(request: NextRequest) {
         );
     }
 
-    console.log("Результат AI:", `${result.substring(0, 100)}...`);
+    console.info("AI API request completed", { action });
     return NextResponse.json({ result });
   } catch (error) {
     console.error("Ошибка AI анализа:", error);

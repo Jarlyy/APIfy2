@@ -54,7 +54,7 @@
 
 ### Интеграции и прокси
 
-- `app/api/proxy/route.ts`: серверный прокси для обхода клиентских CORS-ограничений.
+- `app/api/proxy/route.ts`: серверный прокси для обхода клиентских CORS-ограничений с базовыми SSRF/abuse guardrails для протокола, локальных/приватных адресов, внутренних доменов, опасных портов и размера тела запроса.
 - `app/api/test-providers/route.ts`, `app/api/test-gemini-direct/route.ts`, `app/api/test-mimo-direct/route.ts`: отладочные и интеграционные маршруты для AI-провайдеров.
 
 ### Мониторинг
@@ -90,6 +90,7 @@
 - `lib/supabase/client.ts`: browser-клиент для client components.
 - `lib/supabase/server.ts`: server-клиент для server-side сценариев и route handlers.
 - `lib/supabase/admin.ts`: service-role клиент для задач, требующих повышенных прав, включая monitoring/alerts.
+- `lib/supabase/middleware.ts` и `proxy.ts`: route-level session guard для приватных страниц; неавторизованные пользователи перенаправляются на `/login`.
 - `hooks/useAuth.ts`: клиентский hook для получения текущего пользователя и подписки на изменение auth state.
 - `lib/types/database.types.ts`: типы схемы БД.
 - `supabase/schema.sql`: каноническая SQL-схема проекта.
@@ -115,4 +116,3 @@
 
 - Полная визуальная консистентность светлой и тёмной тем между dashboard и рабочими экранами ещё не доведена до конца.
 - Мониторинг всё ещё завязан на текущий cron/job-runner и ожидает отдельной миграции на альтернативный cron-сервис.
-- Метаданные приложения в `app/layout.tsx` пока остаются дефолтными и не отражают продуктовую идентичность `APIfy2`.
