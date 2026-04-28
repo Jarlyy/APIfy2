@@ -6,13 +6,14 @@ Improve the monitoring response-time chart so dense histories remain readable wh
 ## Current Findings
 - Monitoring chart readability was improved in `components/MonitoringTab.tsx`: dense run histories are compacted into up to 80 averaged segments, dots are hidden for crowded charts, X-axis ticks are thinned, labels adapt to selected range, and tooltips explain aggregated periods.
 - Monitoring chart tooltip now uses theme-aware popover/background/foreground CSS variables, so hover details stay readable in both light and dark themes.
+- User requested marking the alternative cron-service monitoring migration as completed; `DEL-009` is now completed and canonical completion is 94%.
 - User approved fixing the previously identified risks: default app metadata, missing route-level dashboard auth guard, permissive local proxy URL handling, and sensitive AI request logging.
 - Risk fixes are implemented: `app/layout.tsx` has product metadata, `proxy.ts` now delegates to Supabase middleware, `/api/proxy` blocks unsafe targets and oversized bodies, auth pages create the browser Supabase client only during form submission, and `/api/ai/analyze` logs only action-level completion metadata.
 - Verification: targeted Biome auto-fix on changed code files passed with no fixes; `bun run build` passed after moving login/signup Supabase client creation out of render-time prerendering.
 - Current repository `HEAD` is `c0ebcda`; change-control comparison from previous `last_checked_commit` (`d970248`) shows one newer commit: `c0ebcda a lot`.
 - The high-level architecture remains aligned with `docs/README.md`: Next.js App Router UI, `app/api` route handlers, shared domain logic in `lib`, and Supabase-backed auth/persistence.
 - The current code still matches the documented dashboard split: `MainWorkspace` routes `monitoring` to `MonitoringTab` and `analytics` to `RequestAnalyticsTab`.
-- The canonical project completion remains 92% based on `memory_bank/projectbrief.md`; open deliverables are still `DEL-006`, `DEL-008`, and `DEL-009`.
+- The canonical project completion is now 94% based on `memory_bank/projectbrief.md`; open deliverables are `DEL-006` and `DEL-008`.
 - No implementation changes were made during this analysis pass; Memory Bank was updated only to record refreshed context and change-control state.
 - The selected monitor response-time chart now supports user-controlled X-axis ranges (`6h`, `24h`, `7d`, `30d`, `all`) so the visible time window is no longer fixed to a hardcoded recent slice.
 - Two follow-up UX items were explicitly added to the plan for the monitoring chart: adaptive X-axis label formatting by selected range and a per-monitor default chart range.
@@ -62,9 +63,8 @@ Improve the monitoring response-time chart so dense histories remain readable wh
 - Prefer workflow polish that removes disruptive full-page reloads from the dashboard experience when equivalent client-side state handoff is feasible.
 
 ## Next Actions
-- Keep project progress at 92% with three open deliverables: `DEL-006` (in progress), `DEL-008` (in progress), and `DEL-009` (pending).
+- Keep project progress at 94% with two open deliverables: `DEL-006` (in progress) and `DEL-008` (in progress).
 - Continue `DEL-006` with the remaining monitoring-chart follow-up: a per-monitor default chart range.
 - Review the separated monitoring and analytics tabs for any remaining UX duplication beyond copy cleanup and empty states, especially visual hierarchy plus the create/edit monitor flow.
 - Continue dashboard productivity polish work under `DEL-006`, focusing on remaining workspace UX rough edges.
 - Continue dedicated dark-theme pass under `DEL-008` after initial toggle rollout, focusing on full dashboard/workspace parity and contrast validation.
-- Plan monitoring migration under `DEL-009`: replace current cron provider, update schedules/env, and validate `/api/monitor/run` trigger compatibility.

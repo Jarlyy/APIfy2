@@ -19,7 +19,7 @@
 - The legacy combined `components/AnalyticsTab.tsx` component has been removed after the dashboard tab split.
 - User-facing Russian copy in the dashboard header, monitoring tab, and request analytics tab has been normalized after the tab split.
 - Monitoring and request analytics now show clearer empty states when no monitors or history data exist.
-- Canonical project progress is now tracked through `projectbrief.md` deliverables: 92% complete (DEL-006 in progress, DEL-008 in progress, DEL-009 pending, DEL-010 completed).
+- Canonical project progress is now tracked through `projectbrief.md` deliverables: 94% complete (DEL-006 in progress, DEL-008 in progress, DEL-009 completed, DEL-010 completed).
 - The `pnpm` to `bun` migration commit has been reviewed against the current tree and Memory Bank has been synchronized to that state.
 - `docs/README.md` has been created as the canonical high-level architecture source required by `AGENTS.md`.
 - The repository now uses Biome as the active lint tool, and `bun run lint` completes successfully.
@@ -37,6 +37,7 @@
 - `biome.json` contains targeted rule relaxations for legacy patterns (`forEach`, non-null assertions, some a11y checks) so that the codebase can pass lint without an immediate large refactor.
 
 ## Changelog
+- 2026-04-28: Marked `DEL-009` monitoring migration to an alternative cron service as completed per user request, updated the development plan, and raised canonical completion to 94%.
 - 2026-04-28: Fixed `components/MonitoringTab.tsx` chart tooltip colors by applying theme-aware popover background, border, label, and item styles.
 - 2026-04-28: Improved `components/MonitoringTab.tsx` response-time chart readability for large point counts with adaptive labels, point compaction, reduced visual clutter, and aggregate-aware tooltips.
 - 2026-04-28: Fixed the identified risks by updating `app/layout.tsx` metadata, restoring Supabase middleware auth guard via `proxy.ts`, adding SSRF/abuse guardrails to `/api/proxy`, deferring browser Supabase client creation in auth pages to submit handlers, and removing sensitive payload logs from `/api/ai/analyze`.
