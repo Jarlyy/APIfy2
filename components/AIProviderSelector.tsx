@@ -49,7 +49,7 @@ export default function AIProviderSelector({
         </select>
         <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
           <svg
-            className="w-4 h-4 text-gray-400"
+            className="h-4 w-4 text-zinc-400 dark:text-zinc-500"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"

@@ -105,7 +105,7 @@ export default function HistoryTab() {
   };
 
   const getStatusColor = (status?: number) => {
-    if (!status) return "text-gray-600";
+    if (!status) return "text-zinc-600 dark:text-zinc-400";
     if (status >= 200 && status < 300) return "text-green-600";
     if (status >= 400) return "text-red-600";
     return "text-yellow-600";
@@ -120,7 +120,7 @@ export default function HistoryTab() {
       case "pending":
         return <Clock className="h-4 w-4 text-yellow-500" />;
       default:
-        return <Clock className="h-4 w-4 text-gray-500" />;
+        return <Clock className="h-4 w-4 text-zinc-500 dark:text-zinc-400" />;
     }
   };
 

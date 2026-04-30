@@ -175,7 +175,7 @@ export function CorsInfoDialog({ isOpen, onClose }: CorsInfoDialogProps) {
           </div>
 
           {/* Техническая информация */}
-          <div className="bg-gray-50 p-3 rounded-lg">
+          <div className="rounded-lg bg-zinc-50 p-3 dark:bg-zinc-900/60">
             <h4 className="font-medium text-sm mb-2">Техническая информация</h4>
             <p className="text-xs text-muted-foreground">
               CORS - это не ошибка APIfy, а стандартный механизм безопасности

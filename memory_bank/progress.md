@@ -2,7 +2,7 @@
 
 ## Status
 - Memory Bank structure is synchronized with the root `AGENTS.md` requirements.
-- The mandatory root files exist and now reflect the latest upstream monitoring work plus the current local working tree.
+- The mandatory root files exist and now reflect the latest upstream monitoring work plus the current local working tree at `c0e6327`.
 - `memory_bank/ui_extension/` has been added to document public pages and key UI components.
 - `docs/README.md` and `docs/development-plan.md` are synchronized with the current dashboard tab split, deliverable states, and active Biome-based lint tooling.
 - The development plan now explicitly tracks two next monitoring-chart UX tasks: adaptive X-axis labels and a per-monitor default chart range.
@@ -11,15 +11,18 @@
 - Monitor active state is now controlled inline through a switch-like status control instead of a separate pause/play button, and the action no longer triggers a green success message.
 - Monitor active-state toggles now update optimistically in the UI, so the switch responds immediately while the backend request completes.
 - The selected monitor chart now lets the user change the visible X-axis time range (`6h`, `24h`, `7d`, `30d`, `all`) directly in the monitoring tab.
+- The selected monitor chart now persists the preferred time range separately for each monitor in browser storage.
 - Dense monitoring charts now stay readable by compacting long run histories into averaged segments, thinning X-axis ticks, hiding dots when crowded, and showing clearer aggregate tooltips.
 - Monitoring chart tooltip styling now follows light/dark theme variables so hover details remain readable in both themes.
+- Dark-theme parity is now tightened across dashboard/workspace utility surfaces: token/category badges, CORS information, history neutral states, AI provider selector, and CORS proxy hover states.
+- Favorites tab loading no longer starts competing Supabase browser auth locks during initial data fetch; the browser Supabase client is now reused as a singleton and favorites stats load after favorites.
 - The previously identified security/product polish risks are addressed: app metadata now reflects APIfy2, middleware auth guard is active through `proxy.ts`, local CORS proxy blocks risky targets, and the main AI analysis route no longer logs request/response payloads.
 - Dashboard navigation now splits monitoring into its own tab, and request-history analytics lives in a separate dedicated tab.
 - Legal/security hardening for scheduled monitoring is now evaluated as complete against the current plan scope.
 - The legacy combined `components/AnalyticsTab.tsx` component has been removed after the dashboard tab split.
 - User-facing Russian copy in the dashboard header, monitoring tab, and request analytics tab has been normalized after the tab split.
 - Monitoring and request analytics now show clearer empty states when no monitors or history data exist.
-- Canonical project progress is now tracked through `projectbrief.md` deliverables: 94% complete (DEL-006 in progress, DEL-008 in progress, DEL-009 completed, DEL-010 completed).
+- Canonical project progress is now tracked through `projectbrief.md` deliverables: 100% complete (all deliverables completed).
 - The `pnpm` to `bun` migration commit has been reviewed against the current tree and Memory Bank has been synchronized to that state.
 - `docs/README.md` has been created as the canonical high-level architecture source required by `AGENTS.md`.
 - The repository now uses Biome as the active lint tool, and `bun run lint` completes successfully.
@@ -37,6 +40,10 @@
 - `biome.json` contains targeted rule relaxations for legacy patterns (`forEach`, non-null assertions, some a11y checks) so that the codebase can pass lint without an immediate large refactor.
 
 ## Changelog
+- 2026-04-30: Fixed the Favorites tab `Lock broken by another request with the 'steal' option` error by reusing a singleton browser Supabase client and sequencing the initial favorites/statistics load.
+- 2026-04-30: Completed `DEL-008` by tightening dark-theme parity across dashboard/workspace components and raised canonical completion to 100%.
+- 2026-04-30: Completed `DEL-006` by persisting the monitoring chart range per monitor in `MonitoringTab`, updated the development plan, and raised canonical completion to 98%.
+- 2026-04-30: Re-analyzed the project against `AGENTS.md`, Memory Bank, `docs/README.md`, `docs/development-plan.md`, and commits since `c0ebcda`; confirmed current plan remains 94% complete with `DEL-006` and `DEL-008` open.
 - 2026-04-28: Marked `DEL-009` monitoring migration to an alternative cron service as completed per user request, updated the development plan, and raised canonical completion to 94%.
 - 2026-04-28: Fixed `components/MonitoringTab.tsx` chart tooltip colors by applying theme-aware popover background, border, label, and item styles.
 - 2026-04-28: Improved `components/MonitoringTab.tsx` response-time chart readability for large point counts with adaptive labels, point compaction, reduced visual clutter, and aggregate-aware tooltips.
@@ -84,5 +91,5 @@
 - 2026-03-12: Supabase schema was made idempotent for reruns and Memory Bank was previously re-synced.
 
 ## Change Control
-- last_checked_commit: `c0ebcda`
-- checked_on: `2026-04-28`
+- last_checked_commit: `c0e6327`
+- checked_on: `2026-04-30`

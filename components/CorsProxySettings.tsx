@@ -49,7 +49,7 @@ export default function CorsProxySettings() {
         {CORS_PROXIES.map((proxy) => (
           <label
             key={proxy.value}
-            className="flex items-center gap-2 rounded-md border border-zinc-200 bg-white p-2 hover:bg-zinc-50 dark:border-zinc-600 dark:bg-zinc-800 dark:hover:bg-zinc-750"
+            className="flex items-center gap-2 rounded-md border border-zinc-200 bg-white p-2 hover:bg-zinc-50 dark:border-zinc-600 dark:bg-zinc-800 dark:hover:bg-zinc-700"
           >
             <input
               type="radio"

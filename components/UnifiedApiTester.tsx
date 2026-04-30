@@ -950,13 +950,15 @@ export function UnifiedApiTester({
 
   const getCategoryColor = (category: string) => {
     const colors = {
-      auth: "bg-blue-100 text-blue-800",
-      data: "bg-green-100 text-green-800",
-      search: "bg-purple-100 text-purple-800",
-      crud: "bg-orange-100 text-orange-800",
+      auth: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300",
+      data: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300",
+      search:
+        "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300",
+      crud: "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300",
     };
     return (
-      colors[category as keyof typeof colors] || "bg-gray-100 text-gray-800"
+      colors[category as keyof typeof colors] ||
+      "bg-zinc-100 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-300"
     );
   };
 

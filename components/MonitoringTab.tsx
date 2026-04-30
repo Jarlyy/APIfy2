@@ -85,6 +85,15 @@ const CHART_RANGE_OPTIONS: Array<{
 ];
 const MAX_VISIBLE_CHART_POINTS = 80;
 const MAX_DOTS_BEFORE_HIDE = 35;
+const MONITOR_CHART_RANGE_STORAGE_PREFIX = "apify-monitor-chart-range";
+
+function isChartRangeOption(value: string): value is ChartRangeOption {
+  return CHART_RANGE_OPTIONS.some((option) => option.value === value);
+}
+
+function getMonitorChartRangeStorageKey(monitorId: string) {
+  return `${MONITOR_CHART_RANGE_STORAGE_PREFIX}:${monitorId}`;
+}
 
 function formatChartTimestamp(date: Date, chartRange: ChartRangeOption) {
   const options: Intl.DateTimeFormatOptions =
@@ -348,6 +357,21 @@ export default function MonitoringTab({ monitorDraft }: MonitoringTabProps) {
     [monitorRuns, selectedMonitorId],
   );
 
+  useEffect(() => {
+    if (!selectedMonitorId) {
+      setChartRange("24h");
+      return;
+    }
+
+    const savedRange = localStorage.getItem(
+      getMonitorChartRangeStorageKey(selectedMonitorId),
+    );
+
+    setChartRange(
+      savedRange && isChartRangeOption(savedRange) ? savedRange : "24h",
+    );
+  }, [selectedMonitorId]);
+
   const monitoringSummary = useMemo(() => {
     const total = selectedMonitorRuns.length;
     const success = selectedMonitorRuns.filter((run) => run.success).length;
@@ -404,6 +428,19 @@ export default function MonitoringTab({ monitorDraft }: MonitoringTabProps) {
   );
 
   const isEditing = editingMonitorId !== null;
+
+  const handleChartRangeChange = (nextRange: ChartRangeOption) => {
+    setChartRange(nextRange);
+
+    if (!selectedMonitorId) {
+      return;
+    }
+
+    localStorage.setItem(
+      getMonitorChartRangeStorageKey(selectedMonitorId),
+      nextRange,
+    );
+  };
 
   const resetMonitorForm = () => {
     setEditingMonitorId(null);
@@ -1110,7 +1147,7 @@ export default function MonitoringTab({ monitorDraft }: MonitoringTabProps) {
                         type="button"
                         variant={isActive ? "default" : "outline"}
                         size="sm"
-                        onClick={() => setChartRange(option.value)}
+                        onClick={() => handleChartRangeChange(option.value)}
                         className="h-8 px-3"
                       >
                         {option.label}

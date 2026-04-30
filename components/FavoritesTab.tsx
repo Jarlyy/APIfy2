@@ -41,8 +41,12 @@ export default function FavoritesTab({ userId }: FavoritesTabProps) {
   }>({ visible: false, item: null });
 
   useEffect(() => {
-    loadFavorites();
-    loadStats();
+    const loadInitialData = async () => {
+      await loadFavorites();
+      await loadStats();
+    };
+
+    loadInitialData();
   }, []);
 
   const showNotification = (message: string, type: "success" | "error") => {

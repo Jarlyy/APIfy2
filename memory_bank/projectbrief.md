@@ -43,14 +43,14 @@ APIfy2 is a Next.js application for API exploration, manual request execution, O
 | DEL-003 | OpenAPI import and specification-driven request preparation | completed | 15 |
 | DEL-004 | AI-assisted analysis and test generation flows | completed | 15 |
 | DEL-005 | Monitoring, alerting, and uptime analytics workflows | completed | 15 |
-| DEL-006 | Dashboard productivity features: history, favorites, workspace polish | in_progress | 4 |
+| DEL-006 | Dashboard productivity features: history, favorites, workspace polish | completed | 4 |
 | DEL-007 | Operational documentation and tooling alignment with AGENTS requirements | completed | 10 |
-| DEL-008 | Полноценная темная тема интерфейса (dashboard + workspace consistency) | in_progress | 2 |
+| DEL-008 | Полноценная темная тема интерфейса (dashboard + workspace consistency) | completed | 2 |
 | DEL-009 | Миграция мониторинга на альтернативный cron-сервис | completed | 2 |
 | DEL-010 | Legal/security guardrails для расписного мониторинга | completed | 2 |
 
 ## Planned Follow-Ups For DEL-006
-- Monitoring chart: persist a per-monitor default chart range so each monitor can reopen with its preferred time window.
+- Completed: monitoring chart persists a per-monitor default chart range so each monitor reopens with its preferred time window.
 
 ## Project Completion
-Project completion based on completed deliverables: 94%.
+Project completion based on completed deliverables: 100%.

@@ -40,7 +40,7 @@
 - `components/MonitoringTab.tsx`: отдельная dashboard-вкладка для создания мониторинга, списка мониторов и просмотра recent response-time runs.
 - `components/RequestAnalyticsTab.tsx`: отдельная dashboard-вкладка для аналитики по сохранённой истории ручных API-запросов.
 - `components/HistoryTab.tsx` и `components/FavoritesTab.tsx`: работа с сохранёнными запросами пользователя.
-- `components/Header.tsx`: навигация по workspace, горизонтальный scroll вкладок на узких экранах и пользовательский light/dark toggle.
+- `components/Header.tsx`: навигация по workspace, горизонтальный scroll вкладок на узких экранах и пользовательский light/dark toggle; dashboard/workspace surfaces use matching light/dark contrast states.
 - `components/AiAnalysis.tsx` и `components/AIProviderSelector.tsx`: AI-анализ и выбор AI-провайдера.
 
 ## Серверные маршруты
@@ -114,5 +114,4 @@
 
 ## Актуальные архитектурные пробелы
 
-- Полная визуальная консистентность светлой и тёмной тем между dashboard и рабочими экранами ещё не доведена до конца.
 - Миграция мониторинга на альтернативный cron-сервис отмечена как завершенная в плане проекта; текущая рекомендация по внешнему запуску описана в `docs/monitoring.md`.
