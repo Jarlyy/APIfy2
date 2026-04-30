@@ -2,6 +2,7 @@
 
 import { useAuth } from "@/hooks/useAuth";
 import { createClient } from "@/lib/supabase/client";
+import { Moon, Sun } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -109,10 +110,23 @@ export default function Header({
             <button
               type="button"
               onClick={toggleTheme}
-              className="rounded-md border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-100 dark:border-zinc-600 dark:text-zinc-200 dark:hover:bg-zinc-700"
-              aria-label="Переключить тему"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-zinc-300 text-zinc-700 transition-colors hover:bg-zinc-100 dark:border-zinc-600 dark:text-zinc-200 dark:hover:bg-zinc-700"
+              aria-label={
+                theme === "dark"
+                  ? "Переключить на светлую тему"
+                  : "Переключить на тёмную тему"
+              }
+              title={
+                theme === "dark"
+                  ? "Переключить на светлую тему"
+                  : "Переключить на тёмную тему"
+              }
             >
-              {theme === "dark" ? "Светлая" : "Тёмная"}
+              {theme === "dark" ? (
+                <Sun className="h-4 w-4" aria-hidden="true" />
+              ) : (
+                <Moon className="h-4 w-4" aria-hidden="true" />
+              )}
             </button>
             {loading ? (
               <div className="text-sm text-zinc-500 dark:text-zinc-400">

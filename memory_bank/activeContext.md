@@ -1,7 +1,7 @@
 # Active Context
 
 ## Current Task
-Fix the Favorites tab Supabase auth-lock error: `Lock broken by another request with the 'steal' option`.
+Replace the dashboard theme toggle text button with an icon-only control.
 
 ## Current Findings
 - Current repository `HEAD` is `c0e6327`; change-control comparison from previous `last_checked_commit` (`c0ebcda`) shows two newer commits: `fb3edb6 Polish monitoring chart and security guardrails` and `c0e6327 Mark cron migration complete`.
@@ -13,6 +13,7 @@ Fix the Favorites tab Supabase auth-lock error: `Lock broken by another request 
 - Canonical project completion is now 100% based on `memory_bank/projectbrief.md`; all deliverables are completed.
 - Favorites loading error root cause: `FavoritesTab` started `getFavorites()` and `getFavoriteStats()` concurrently, and the shared data helpers created separate browser Supabase clients that both called `auth.getUser()`, triggering Supabase browser auth-lock contention.
 - The fix keeps the browser Supabase client as a singleton in `lib/supabase/client.ts` and loads Favorites initial data sequentially in `components/FavoritesTab.tsx`.
+- `components/Header.tsx` theme toggle now uses `Moon`/`Sun` icons instead of text labels while preserving accessible `aria-label` and `title` text for the target theme.
 - Monitoring chart readability was improved in `components/MonitoringTab.tsx`: dense run histories are compacted into up to 80 averaged segments, dots are hidden for crowded charts, X-axis ticks are thinned, labels adapt to selected range, and tooltips explain aggregated periods.
 - Monitoring chart tooltip now uses theme-aware popover/background/foreground CSS variables, so hover details stay readable in both light and dark themes.
 - User requested marking the alternative cron-service monitoring migration as completed; `DEL-009` is now completed and canonical completion is 94%.

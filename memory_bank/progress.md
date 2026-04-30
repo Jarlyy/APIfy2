@@ -16,6 +16,7 @@
 - Monitoring chart tooltip styling now follows light/dark theme variables so hover details remain readable in both themes.
 - Dark-theme parity is now tightened across dashboard/workspace utility surfaces: token/category badges, CORS information, history neutral states, AI provider selector, and CORS proxy hover states.
 - Favorites tab loading no longer starts competing Supabase browser auth locks during initial data fetch; the browser Supabase client is now reused as a singleton and favorites stats load after favorites.
+- Dashboard theme switching is now exposed as an icon-only `Sun`/`Moon` control with accessible labels instead of text buttons.
 - The previously identified security/product polish risks are addressed: app metadata now reflects APIfy2, middleware auth guard is active through `proxy.ts`, local CORS proxy blocks risky targets, and the main AI analysis route no longer logs request/response payloads.
 - Dashboard navigation now splits monitoring into its own tab, and request-history analytics lives in a separate dedicated tab.
 - Legal/security hardening for scheduled monitoring is now evaluated as complete against the current plan scope.
@@ -40,6 +41,7 @@
 - `biome.json` contains targeted rule relaxations for legacy patterns (`forEach`, non-null assertions, some a11y checks) so that the codebase can pass lint without an immediate large refactor.
 
 ## Changelog
+- 2026-04-30: Replaced the dashboard theme toggle text button with an accessible icon-only Sun/Moon control in `Header`.
 - 2026-04-30: Fixed the Favorites tab `Lock broken by another request with the 'steal' option` error by reusing a singleton browser Supabase client and sequencing the initial favorites/statistics load.
 - 2026-04-30: Completed `DEL-008` by tightening dark-theme parity across dashboard/workspace components and raised canonical completion to 100%.
 - 2026-04-30: Completed `DEL-006` by persisting the monitoring chart range per monitor in `MonitoringTab`, updated the development plan, and raised canonical completion to 98%.
